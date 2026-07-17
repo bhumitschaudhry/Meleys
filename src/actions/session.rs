@@ -2,6 +2,7 @@ use std::sync::Arc;
 
 use anyhow::Result;
 
+use crate::engine::EnginePreference;
 use crate::error::MeleyError;
 use crate::observation::{ActionResult, Observation, SessionInfo};
 use crate::session::SessionManager;
@@ -12,10 +13,11 @@ pub async fn create_session(
     profile_name: Option<String>,
     headless: Option<bool>,
     default_search_engine: Option<String>,
+    engine_preference: Option<EnginePreference>,
 ) -> Observation {
     let result: Result<SessionInfo> = async {
         let session = session_manager
-            .create_session(profile_name, headless, default_search_engine)
+            .create_session(profile_name, headless, default_search_engine, engine_preference)
             .await?;
         let tab_count = session.tab_count().await;
         let engine = session

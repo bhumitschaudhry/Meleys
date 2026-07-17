@@ -8,7 +8,7 @@ use anyhow::Result;
 use tokio::sync::RwLock;
 
 use crate::config::Config;
-use crate::engine::EngineKind;
+use crate::engine::EnginePreference;
 use crate::error::MeleyError;
 use crate::observation::SessionInfo;
 use crate::session::browser_session::BrowserSession;
@@ -34,6 +34,7 @@ impl SessionManager {
         profile_name: Option<String>,
         headless: Option<bool>,
         default_search_engine: Option<String>,
+        engine_preference: Option<EnginePreference>,
     ) -> Result<Arc<BrowserSession>> {
         // Check session limit
         {
@@ -55,6 +56,10 @@ impl SessionManager {
             Profile::temporary(&self.config.engine.chromium.profile_dir)?
         };
 
+        // Select engine based on preference
+        let preference = engine_preference.unwrap_or_default();
+        let engine_selection = crate::engine::fallback::select_engine(preference, &self.config.engine)?;
+
         // Launch browser
         let mut browser_config = self.config.engine.chromium.clone();
         if let Some(h) = headless {
@@ -72,7 +77,8 @@ impl SessionManager {
             profile,
             launch_result.browser,
             launch_result.handler_task,
-            EngineKind::Chromium,
+            engine_selection.engine_kind,
+            engine_selection.engine_history,
         ));
 
         // Set per-session default search engine

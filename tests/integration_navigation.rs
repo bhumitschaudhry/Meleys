@@ -12,7 +12,7 @@ async fn test_navigation_and_extraction() {
 
     // Create session
     let session = manager
-        .create_session(None, Some(true), None)
+        .create_session(None, Some(true), None, None)
         .await
         .expect("Failed to create session");
     let session_id = session.session_id.clone();

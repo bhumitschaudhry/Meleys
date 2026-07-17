@@ -181,6 +181,7 @@ struct CreateSessionRequest {
     profile_name: Option<String>,
     headless: Option<bool>,
     default_search_engine: Option<String>,
+    engine_preference: Option<String>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -378,11 +379,17 @@ async fn create_session_handler(
     State(state): State<AppState>,
     Json(req): Json<CreateSessionRequest>,
 ) -> Json<Observation> {
+    let engine_preference = req.engine_preference.as_deref().map(|s| match s {
+        "lightpanda" => crate::engine::EnginePreference::LightpandaOnly,
+        "chromium" => crate::engine::EnginePreference::ChromiumOnly,
+        _ => crate::engine::EnginePreference::LightpandaWithFallback,
+    });
     let obs = crate::actions::session::create_session(
         &state.session_manager,
         req.profile_name,
         req.headless,
         req.default_search_engine,
+        engine_preference,
     )
     .await;
     Json(obs)

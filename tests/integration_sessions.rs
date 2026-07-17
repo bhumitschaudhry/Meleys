@@ -9,7 +9,7 @@ async fn test_session_lifecycle() {
 
     // Create session
     let session = manager
-        .create_session(None, Some(true), None)
+        .create_session(None, Some(true), None, None)
         .await
         .expect("Failed to create session");
 

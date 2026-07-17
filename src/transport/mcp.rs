@@ -569,11 +569,17 @@ async fn dispatch_tool(
 
     match name {
         "create_session" => {
+            let engine_preference = a["engine_preference"].as_str().map(|s| match s {
+                "lightpanda" => crate::engine::EnginePreference::LightpandaOnly,
+                "chromium" => crate::engine::EnginePreference::ChromiumOnly,
+                _ => crate::engine::EnginePreference::LightpandaWithFallback,
+            });
             crate::actions::session::create_session(
                 session_manager,
                 a["profile_name"].as_str().map(|s| s.to_string()),
                 a["headless"].as_bool(),
                 a["default_search_engine"].as_str().map(|s| s.to_string()),
+                engine_preference,
             )
             .await
         }

@@ -39,6 +39,7 @@ impl BrowserSession {
         browser: Browser,
         handler_task: tokio::task::JoinHandle<()>,
         engine_kind: EngineKind,
+        engine_history: Vec<EngineTransition>,
     ) -> Self {
         Self {
             session_id,
@@ -50,7 +51,7 @@ impl BrowserSession {
             default_search_engine: Arc::new(Mutex::new(None)),
             handler_task: Some(handler_task),
             engine_kind,
-            engine_history: Vec::new(),
+            engine_history,
         }
     }
 
