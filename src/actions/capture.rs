@@ -102,12 +102,15 @@ pub async fn screenshot(
 
             let b64 = base64::engine::general_purpose::STANDARD.encode(&screenshot_data);
 
-            Ok::<ActionResult, anyhow::Error>(ActionResult::Screenshot {
-                format: fmt.to_string(),
-                base64: b64,
-                width,
-                height,
-            })
+            let payload = serde_json::json!({
+                "format": fmt,
+                "base64": b64,
+                "width": width,
+                "height": height,
+            });
+            Ok::<ActionResult, anyhow::Error>(ActionResult::Text(
+                payload.to_string(),
+            ))
         }).await
         .map_err(|_| anyhow::anyhow!(MeleyError::Timeout("screenshot timed out".to_string())))??;
 

@@ -1,6 +1,8 @@
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
+use crate::engine::{EngineKind, EngineTransition};
+
 /// The universal return type from every Meleys action.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Observation {
@@ -16,6 +18,8 @@ pub struct Observation {
     pub error: Option<ErrorInfo>,
     pub console_messages: Vec<ConsoleMessage>,
     pub network_summary: Option<NetworkSummary>,
+    pub engine_used: Option<EngineKind>,
+    pub engine_fallback: Option<EngineTransition>,
 }
 
 impl Observation {
@@ -38,6 +42,8 @@ impl Observation {
             error: None,
             console_messages: vec![],
             network_summary: None,
+            engine_used: None,
+            engine_fallback: None,
         }
     }
 
@@ -66,6 +72,8 @@ impl Observation {
             }),
             console_messages: vec![],
             network_summary: None,
+            engine_used: None,
+            engine_fallback: None,
         }
     }
 }
@@ -79,12 +87,6 @@ pub enum ActionResult {
     SearchResults(Vec<SearchResultItem>),
     Dom(SimplifiedNode),
     AxTree(AxNode),
-    Screenshot {
-        format: String,
-        base64: String,
-        width: u32,
-        height: u32,
-    },
     Download(DownloadInfo),
     Tabs(Vec<TabInfo>),
     Sessions(Vec<SessionInfo>),
@@ -329,35 +331,6 @@ mod tests {
                 assert!(results[1].snippet.is_none());
             }
             _ => panic!("Expected SearchResults"),
-        }
-    }
-
-    #[test]
-    fn test_action_result_screenshot() {
-        let obs = Observation::success(
-            "",
-            "",
-            "",
-            ActionResult::Screenshot {
-                format: "png".into(),
-                base64: "abc123".into(),
-                width: 1280,
-                height: 800,
-            },
-        );
-        match &obs.result {
-            ActionResult::Screenshot {
-                format,
-                base64,
-                width,
-                height,
-            } => {
-                assert_eq!(format, "png");
-                assert_eq!(base64, "abc123");
-                assert_eq!(*width, 1280);
-                assert_eq!(*height, 800);
-            }
-            _ => panic!("Expected Screenshot"),
         }
     }
 
