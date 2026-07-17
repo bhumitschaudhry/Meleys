@@ -8,6 +8,7 @@ use anyhow::Result;
 use tokio::sync::RwLock;
 
 use crate::config::Config;
+use crate::engine::EngineKind;
 use crate::error::MeleyError;
 use crate::observation::SessionInfo;
 use crate::session::browser_session::BrowserSession;
@@ -71,6 +72,7 @@ impl SessionManager {
             profile,
             launch_result.browser,
             launch_result.handler_task,
+            EngineKind::Chromium,
         ));
 
         // Set per-session default search engine

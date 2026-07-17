@@ -6,6 +6,7 @@ use chromiumoxide::browser::Browser;
 use chromiumoxide::Page;
 use tokio::sync::Mutex;
 
+use crate::engine::{EngineKind, EngineTransition};
 use crate::error::MeleyError;
 use crate::observation::{CookieInfo, TabInfo};
 use crate::session::profile::Profile;
@@ -27,6 +28,8 @@ pub struct BrowserSession {
     pub created_at: String,
     pub default_search_engine: Arc<Mutex<Option<String>>>,
     pub handler_task: Option<tokio::task::JoinHandle<()>>,
+    pub engine_kind: EngineKind,
+    pub engine_history: Vec<EngineTransition>,
 }
 
 impl BrowserSession {
@@ -35,6 +38,7 @@ impl BrowserSession {
         profile: Profile,
         browser: Browser,
         handler_task: tokio::task::JoinHandle<()>,
+        engine_kind: EngineKind,
     ) -> Self {
         Self {
             session_id,
@@ -45,6 +49,8 @@ impl BrowserSession {
             created_at: chrono::Utc::now().to_rfc3339(),
             default_search_engine: Arc::new(Mutex::new(None)),
             handler_task: Some(handler_task),
+            engine_kind,
+            engine_history: Vec::new(),
         }
     }
 
