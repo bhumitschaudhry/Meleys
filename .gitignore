@@ -4,4 +4,7 @@ Cargo.lock
 /wix/*.wixobj
 /wix/*.msi
 spec.md
+change.md
+export.md
+.superpowers/
 
