@@ -172,22 +172,54 @@ Below is the complete list of tools exposed by the Meleys MCP server:
 
 ---
 
-## Client Integration Examples
+## Client Integration & Automatic Setup
 
-### Claude Desktop Integration
+To simplify integrating Meleys into your daily development workflow, Meleys supports both **automatic tool registration** for major coding agents and **manual configuration** where needed.
 
-To configure Claude Desktop to run Meleys as a local MCP tool server, edit your `claude_desktop_config.json` configuration file:
+### 1. Automatic Integration (`meleys setup`)
 
+Meleys can automatically register itself as a stdio MCP server for supported coding agents using the `setup` CLI command. It detects your installed agents, registers the tool path, and configures environment parameters.
+
+```bash
+# Register Meleys for all detected coding agents
+meleys setup install
+```
+
+#### Supported Agents & Automated Config Files
+When you run `meleys setup install`, it edits the following configurations:
+
+| Agent | Configuration File | Automatic Actions |
+|-------|--------------------|-------------------|
+| **Claude Code** | `%USERPROFILE%\.claude.json` | Registers the `meleys` MCP tool. Denies built-in `WebSearch` and `WebFetch` in `settings.json` to force Claude to route web actions through Meleys. |
+| **Cline** | `%USERPROFILE%\.cline\mcp.json` | Appends `meleys` under the `mcpServers` registry. |
+| **Cursor** | `%USERPROFILE%\.cursor\mcp.json` | Appends `meleys` under the `mcpServers` registry. |
+| **VS Code / Copilot** | `%APPDATA%\Code\User\settings.json` | Registers Meleys as a stdio tool server under `mcp.servers.meleys`. |
+
+#### Manual setup commands:
+- **Register for select agents only**: `meleys setup install --agents claude,cursor`
+- **Avoid disabling agent's built-in search**: `meleys setup install --no-disable-builtin`
+- **View registration status**: `meleys setup list`
+- **Remove Meleys registration**: `meleys setup uninstall`
+
+---
+
+### 2. Manual Integration Examples
+
+#### Claude Desktop
+
+Claude Desktop configuration is not modified by `meleys setup` and must be configured manually.
+
+Edit your `claude_desktop_config.json` configuration file:
 - **Windows**: `%APPDATA%\Claude\claude_desktop_config.json`
-- **macOS**: `~/Library/Application Support/Claude/claude_desktop_config.json`
+- **macOS/Linux**: `~/Library/Application Support/Claude/claude_desktop_config.json`
 
-Add the following to the `mcpServers` object:
+Add the following entry under `mcpServers`:
 
 ```json
 {
   "mcpServers": {
     "meleys": {
-      "command": "C:\\path\\to\\meleys\\target\\release\\meleys.exe",
+      "command": "meleys",
       "args": ["--mcp"],
       "env": {
         "MELEYS_LIMITS__ALLOW_EVALUATE_JS": "true"
@@ -196,5 +228,5 @@ Add the following to the `mcpServers` object:
   }
 }
 ```
+*(Ensure the `meleys` binary is on your system `PATH`, or replace `"meleys"` with the absolute path to your compiled binary).*
 
-Replace `C:\\path\\to\\meleys\\target\\release\\meleys.exe` with the absolute path to your compiled binary. Once saved, restart your Claude Desktop application. A hammer icon should appear, indicating the browser automation tools are available.

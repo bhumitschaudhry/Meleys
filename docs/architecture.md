@@ -70,10 +70,15 @@ The crate is structured as follows:
 - `src/session/`:
   - `browser_session.rs`: The core struct holding Chrome CDP connections, registry of tabs, and process lifecycle.
   - `profile.rs`: Platform-specific Chromium profile directory path management.
+- `src/setup/`:
+  - `mod.rs`: Implements `meleys setup` CLI commands, handling automatic config detection, JSON/JSONC configuration editing, and custom permission settings for third-party coding agents.
 - `src/cdp/`:
   - `launcher.rs`: Discovers system Google Chrome / Chromium and launches it with custom command-line arguments.
   - `dom.rs`: Flattens and filters the CDP DOM representation into a light `SimplifiedNode` hierarchy.
   - `ax_tree.rs`: Extracts the Accessibility tree for semantic LLM consumption.
+- `wix/`:
+  - `meleys.wxs`: WiX installer configuration mapping file copy actions, registry keys, PATH environment variables, and post-installation command execution hooks.
+  - `build.ps1`: PowerShell script automating compilation version reading, candle compilation, and light linking for MSI production.
 
 ---
 
