@@ -126,9 +126,7 @@ fn parse_ax_node(v: &serde_json::Value) -> anyhow::Result<AxNode> {
     let disabled = v["disabled"].as_bool().unwrap_or(false);
 
     let children = if let Some(arr) = v["children"].as_array() {
-        arr.iter()
-            .filter_map(|c| parse_ax_node(c).ok())
-            .collect()
+        arr.iter().filter_map(|c| parse_ax_node(c).ok()).collect()
     } else {
         vec![]
     };

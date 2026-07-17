@@ -14,9 +14,13 @@ pub async fn create_session(
     default_search_engine: Option<String>,
 ) -> Observation {
     let result: Result<SessionInfo> = async {
-        let session = session_manager.create_session(profile_name, headless, default_search_engine).await?;
+        let session = session_manager
+            .create_session(profile_name, headless, default_search_engine)
+            .await?;
         let tab_count = session.tab_count().await;
-        let engine = session.get_default_search_engine().await
+        let engine = session
+            .get_default_search_engine()
+            .await
             .unwrap_or_else(|| session_manager.default_search_engine().to_string());
         Ok(SessionInfo {
             session_id: session.session_id.clone(),
@@ -25,12 +29,18 @@ pub async fn create_session(
             tab_count,
             default_search_engine: engine,
         })
-    }.await;
+    }
+    .await;
 
     match result {
         Ok(info) => {
             let sid = info.session_id.clone();
-            Observation::success(sid.clone(), "", "create_session", ActionResult::Sessions(vec![info]))
+            Observation::success(
+                sid.clone(),
+                "",
+                "create_session",
+                ActionResult::Sessions(vec![info]),
+            )
         }
         Err(e) => {
             let (code, retryable) = error_code(&e);
@@ -40,27 +50,27 @@ pub async fn create_session(
 }
 
 /// Close a browser session.
-pub async fn close_session(
-    session_manager: &Arc<SessionManager>,
-    session_id: &str,
-) -> Observation {
-    let result: Result<()> = async {
-        session_manager.close_session(session_id).await
-    }.await;
+pub async fn close_session(session_manager: &Arc<SessionManager>, session_id: &str) -> Observation {
+    let result: Result<()> = async { session_manager.close_session(session_id).await }.await;
 
     match result {
         Ok(()) => Observation::success(session_id, "", "close_session", ActionResult::Empty),
         Err(e) => {
             let (code, retryable) = error_code(&e);
-            Observation::failure(session_id, "", "close_session", code, e.to_string(), retryable)
+            Observation::failure(
+                session_id,
+                "",
+                "close_session",
+                code,
+                e.to_string(),
+                retryable,
+            )
         }
     }
 }
 
 /// List all sessions.
-pub async fn list_sessions(
-    session_manager: &Arc<SessionManager>,
-) -> Observation {
+pub async fn list_sessions(session_manager: &Arc<SessionManager>) -> Observation {
     let sessions = session_manager.list_sessions().await;
     Observation::success("", "", "list_sessions", ActionResult::Sessions(sessions))
 }

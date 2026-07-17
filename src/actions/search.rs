@@ -19,7 +19,9 @@ pub trait SearchEngineAdapter: Send + Sync {
 pub struct DuckDuckGoAdapter;
 
 impl SearchEngineAdapter for DuckDuckGoAdapter {
-    fn name(&self) -> &'static str { "duckduckgo" }
+    fn name(&self) -> &'static str {
+        "duckduckgo"
+    }
 
     fn search_url(&self, query: &str) -> String {
         let encoded = urlencoding(query);
@@ -40,9 +42,16 @@ impl SearchEngineAdapter for DuckDuckGoAdapter {
 
 fn extract_ddg_results(node: &SimplifiedNode, results: &mut Vec<SearchResultItem>, rank: &mut u32) {
     let tag = node.tag.as_str();
-    let class = node.attributes.get("class").map(|s| s.as_str()).unwrap_or("");
+    let class = node
+        .attributes
+        .get("class")
+        .map(|s| s.as_str())
+        .unwrap_or("");
 
-    if class.contains("result__body") || class.contains("result ") || (tag == "div" && class.contains("result")) {
+    if class.contains("result__body")
+        || class.contains("result ")
+        || (tag == "div" && class.contains("result"))
+    {
         // Find title and URL within this result
         let mut title = String::new();
         let mut url = String::new();
@@ -67,8 +76,17 @@ fn extract_ddg_results(node: &SimplifiedNode, results: &mut Vec<SearchResultItem
     }
 }
 
-fn extract_ddg_result_parts(node: &SimplifiedNode, title: &mut String, url: &mut String, snippet: &mut Option<String>) {
-    let class = node.attributes.get("class").map(|s| s.as_str()).unwrap_or("");
+fn extract_ddg_result_parts(
+    node: &SimplifiedNode,
+    title: &mut String,
+    url: &mut String,
+    snippet: &mut Option<String>,
+) {
+    let class = node
+        .attributes
+        .get("class")
+        .map(|s| s.as_str())
+        .unwrap_or("");
 
     if class.contains("result__title") || class.contains("result__a") {
         if let Some(text) = &node.text {
@@ -107,7 +125,9 @@ fn extract_ddg_result_parts(node: &SimplifiedNode, title: &mut String, url: &mut
 pub struct BingAdapter;
 
 impl SearchEngineAdapter for BingAdapter {
-    fn name(&self) -> &'static str { "bing" }
+    fn name(&self) -> &'static str {
+        "bing"
+    }
 
     fn search_url(&self, query: &str) -> String {
         let encoded = urlencoding(query);
@@ -126,8 +146,16 @@ impl SearchEngineAdapter for BingAdapter {
     }
 }
 
-fn extract_bing_results(node: &SimplifiedNode, results: &mut Vec<SearchResultItem>, rank: &mut u32) {
-    let class = node.attributes.get("class").map(|s| s.as_str()).unwrap_or("");
+fn extract_bing_results(
+    node: &SimplifiedNode,
+    results: &mut Vec<SearchResultItem>,
+    rank: &mut u32,
+) {
+    let class = node
+        .attributes
+        .get("class")
+        .map(|s| s.as_str())
+        .unwrap_or("");
 
     if class.contains("b_algo") {
         let mut title = String::new();
@@ -151,7 +179,13 @@ fn extract_bing_results(node: &SimplifiedNode, results: &mut Vec<SearchResultIte
     }
 }
 
-fn extract_bing_result_parts(node: &SimplifiedNode, title: &mut String, url: &mut String, snippet: &mut Option<String>, first: bool) {
+fn extract_bing_result_parts(
+    node: &SimplifiedNode,
+    title: &mut String,
+    url: &mut String,
+    snippet: &mut Option<String>,
+    first: bool,
+) {
     if node.tag == "h2" && title.is_empty() {
         if let Some(text) = &node.text {
             *title = text.trim().to_string();
@@ -160,7 +194,9 @@ fn extract_bing_result_parts(node: &SimplifiedNode, title: &mut String, url: &mu
         for child in &node.children {
             if child.tag == "a" {
                 if title.is_empty() {
-                    if let Some(t) = &child.text { *title = t.trim().to_string(); }
+                    if let Some(t) = &child.text {
+                        *title = t.trim().to_string();
+                    }
                 }
                 if let Some(href) = child.attributes.get("href") {
                     if href.starts_with("http") && url.is_empty() {
@@ -179,7 +215,11 @@ fn extract_bing_result_parts(node: &SimplifiedNode, title: &mut String, url: &mu
         }
     }
 
-    let class = node.attributes.get("class").map(|s| s.as_str()).unwrap_or("");
+    let class = node
+        .attributes
+        .get("class")
+        .map(|s| s.as_str())
+        .unwrap_or("");
     if class.contains("b_caption") || class.contains("b_snippet") {
         if let Some(text) = &node.text {
             *snippet = Some(text.trim().to_string());
@@ -195,7 +235,9 @@ fn extract_bing_result_parts(node: &SimplifiedNode, title: &mut String, url: &mu
 pub struct GoogleAdapter;
 
 impl SearchEngineAdapter for GoogleAdapter {
-    fn name(&self) -> &'static str { "google" }
+    fn name(&self) -> &'static str {
+        "google"
+    }
 
     fn search_url(&self, query: &str) -> String {
         let encoded = urlencoding(query);
@@ -214,8 +256,16 @@ impl SearchEngineAdapter for GoogleAdapter {
     }
 }
 
-fn extract_google_results(node: &SimplifiedNode, results: &mut Vec<SearchResultItem>, rank: &mut u32) {
-    let class = node.attributes.get("class").map(|s| s.as_str()).unwrap_or("");
+fn extract_google_results(
+    node: &SimplifiedNode,
+    results: &mut Vec<SearchResultItem>,
+    rank: &mut u32,
+) {
+    let class = node
+        .attributes
+        .get("class")
+        .map(|s| s.as_str())
+        .unwrap_or("");
 
     if class.contains(" g ") || class == "g" || class.starts_with("g ") {
         let mut title = String::new();
@@ -239,8 +289,16 @@ fn extract_google_results(node: &SimplifiedNode, results: &mut Vec<SearchResultI
     }
 }
 
-fn extract_google_result_parts(node: &SimplifiedNode, title: &mut String, url: &mut String, snippet: &mut Option<String>, depth: u32) {
-    if depth > 8 { return; }
+fn extract_google_result_parts(
+    node: &SimplifiedNode,
+    title: &mut String,
+    url: &mut String,
+    snippet: &mut Option<String>,
+    depth: u32,
+) {
+    if depth > 8 {
+        return;
+    }
 
     if (node.tag == "h3" || node.tag == "h2") && title.is_empty() {
         if let Some(text) = &node.text {
@@ -256,8 +314,14 @@ fn extract_google_result_parts(node: &SimplifiedNode, title: &mut String, url: &
         }
     }
 
-    let class = node.attributes.get("class").map(|s| s.as_str()).unwrap_or("");
-    if (class.contains("VwiC3b") || class.contains("s3v9rd") || class.contains("st")) && snippet.is_none() {
+    let class = node
+        .attributes
+        .get("class")
+        .map(|s| s.as_str())
+        .unwrap_or("");
+    if (class.contains("VwiC3b") || class.contains("s3v9rd") || class.contains("st"))
+        && snippet.is_none()
+    {
         if let Some(text) = &node.text {
             if !text.trim().is_empty() {
                 *snippet = Some(text.trim().to_string());
@@ -289,7 +353,10 @@ impl SearchRegistry {
     }
 
     pub fn get(&self, name: &str) -> Option<&dyn SearchEngineAdapter> {
-        self.adapters.iter().find(|a| a.name() == name).map(|a| a.as_ref())
+        self.adapters
+            .iter()
+            .find(|a| a.name() == name)
+            .map(|a| a.as_ref())
     }
 
     pub fn default(&self) -> &dyn SearchEngineAdapter {
@@ -308,6 +375,7 @@ impl SearchRegistry {
 }
 
 /// Perform a web search.
+#[allow(clippy::too_many_arguments, clippy::type_complexity)]
 pub async fn search_web(
     session_manager: &Arc<SessionManager>,
     session_id: &str,
@@ -320,7 +388,12 @@ pub async fn search_web(
 ) -> Observation {
     let timeout = tokio::time::Duration::from_millis(timeout_ms.unwrap_or(30000));
 
-    let result: Result<(String, Option<String>, Option<String>, Vec<SearchResultItem>)> = async {
+    let result: Result<(
+        String,
+        Option<String>,
+        Option<String>,
+        Vec<SearchResultItem>,
+    )> = async {
         let session = session_manager.get_session(session_id).await?;
         let (actual_tab_id, page_lock) = if let Some(tid) = tab_id {
             let p = session.get_page(tid).await?;
@@ -336,8 +409,12 @@ pub async fn search_web(
             .or(session_engine)
             .unwrap_or_else(|| session_manager.default_search_engine().to_string());
 
-        let adapter = registry.get(&engine_name)
-            .ok_or_else(|| anyhow::anyhow!(MeleyError::SearchEngineParseFailed(format!("Unknown engine: {}", engine_name))))?;
+        let adapter = registry.get(&engine_name).ok_or_else(|| {
+            anyhow::anyhow!(MeleyError::SearchEngineParseFailed(format!(
+                "Unknown engine: {}",
+                engine_name
+            )))
+        })?;
 
         let search_url = adapter.search_url(query);
         let ready_selector = adapter.results_ready_selector().to_string();
@@ -346,14 +423,20 @@ pub async fn search_web(
 
         // Navigate to search URL
         tokio::time::timeout(timeout, async {
-            page.goto(&search_url).await
+            page.goto(&search_url)
+                .await
                 .map_err(|e| anyhow::anyhow!(MeleyError::NavigationFailed(e.to_string())))?;
-            page.wait_for_navigation().await
+            page.wait_for_navigation()
+                .await
                 .map_err(|e| anyhow::anyhow!(MeleyError::NavigationFailed(e.to_string())))?;
             Ok::<(), anyhow::Error>(())
-        }).await
-        .map_err(|_| anyhow::anyhow!(MeleyError::Timeout("Search navigation timed out".to_string())))?
-        .map_err(|e| e)?;
+        })
+        .await
+        .map_err(|_| {
+            anyhow::anyhow!(MeleyError::Timeout(
+                "Search navigation timed out".to_string()
+            ))
+        })??;
 
         // Wait for results
         let wait_js = format!(
@@ -364,27 +447,34 @@ pub async fn search_web(
                 }}
                 return false;
             }})()"#,
-            serde_json::json!(ready_selector.split(',').map(|s| s.trim()).collect::<Vec<_>>())
+            serde_json::json!(ready_selector
+                .split(',')
+                .map(|s| s.trim())
+                .collect::<Vec<_>>())
         );
 
         let poll = tokio::time::Duration::from_millis(200);
         let wait_timeout = tokio::time::Duration::from_millis(10000);
         let _ = tokio::time::timeout(wait_timeout, async {
             loop {
-                let found = page.evaluate(wait_js.clone()).await
+                let found = page
+                    .evaluate(wait_js.clone())
+                    .await
                     .ok()
                     .and_then(|r| r.into_value::<bool>().ok())
                     .unwrap_or(false);
-                if found { break; }
+                if found {
+                    break;
+                }
                 tokio::time::sleep(poll).await;
             }
-        }).await;
+        })
+        .await;
 
         // Extract DOM and parse results
-        let dom = crate::cdp::dom::get_simplified_dom(
-            &page, None, 8, false, 2000
-        ).await
-        .map_err(|e| anyhow::anyhow!(MeleyError::SearchEngineParseFailed(e.to_string())))?;
+        let dom = crate::cdp::dom::get_simplified_dom(&page, None, 8, false, 2000)
+            .await
+            .map_err(|e| anyhow::anyhow!(MeleyError::SearchEngineParseFailed(e.to_string())))?;
 
         let mut items = adapter.extract(&dom);
         let max = num_results.unwrap_or(10);
@@ -399,18 +489,31 @@ pub async fn search_web(
         let url = page.url().await.ok().flatten().map(|u| u.to_string());
         let title = page.get_title().await.ok().flatten();
         Ok((actual_tab_id, url, title, items))
-    }.await;
+    }
+    .await;
 
     match result {
         Ok((tid, url, title, items)) => {
-            let mut obs = Observation::success(session_id, tid, "search_web", ActionResult::SearchResults(items));
+            let mut obs = Observation::success(
+                session_id,
+                tid,
+                "search_web",
+                ActionResult::SearchResults(items),
+            );
             obs.url = url;
             obs.title = title;
             obs
         }
         Err(e) => {
             let (code, retryable) = error_code(&e);
-            Observation::failure(session_id, tab_id.unwrap_or(""), "search_web", code, e.to_string(), retryable)
+            Observation::failure(
+                session_id,
+                tab_id.unwrap_or(""),
+                "search_web",
+                code,
+                e.to_string(),
+                retryable,
+            )
         }
     }
 }
@@ -437,7 +540,9 @@ pub async fn set_default_search_engine(
     if let Some(sid) = session_id {
         // Session-level override
         if let Ok(session) = session_manager.get_session(sid).await {
-            session.set_default_search_engine(Some(engine.to_string())).await;
+            session
+                .set_default_search_engine(Some(engine.to_string()))
+                .await;
         }
     } else {
         // Runtime-wide
@@ -481,16 +586,16 @@ pub async fn get_default_search_engine(
 }
 
 fn urlencoding(s: &str) -> String {
-    s.chars().map(|c| {
-        match c {
+    s.chars()
+        .map(|c| match c {
             'A'..='Z' | 'a'..='z' | '0'..='9' | '-' | '_' | '.' | '~' => c.to_string(),
             ' ' => '+'.to_string(),
             _ => {
                 let bytes = c.to_string().into_bytes();
                 bytes.iter().map(|b| format!("%{:02X}", b)).collect()
             }
-        }
-    }).collect()
+        })
+        .collect()
 }
 
 fn error_code(e: &anyhow::Error) -> (&'static str, bool) {
@@ -885,7 +990,10 @@ mod tests {
         assert_eq!(results.len(), 1);
         assert_eq!(results[0].title, "Rust Language");
         assert_eq!(results[0].url, "https://rust-lang.org");
-        assert_eq!(results[0].snippet.as_deref(), Some("Systems programming language"));
+        assert_eq!(
+            results[0].snippet.as_deref(),
+            Some("Systems programming language")
+        );
     }
 
     #[test]
@@ -953,52 +1061,50 @@ mod tests {
                 text: None,
                 visible: true,
                 bounding_box: None,
-                children: vec![
-                    SimplifiedNode {
-                        backend_node_id: 2,
-                        tag: "div".into(),
-                        attributes: HashMap::new(),
-                        text: None,
-                        visible: true,
-                        bounding_box: None,
-                        children: vec![
-                            SimplifiedNode {
-                                backend_node_id: 3,
-                                tag: "a".into(),
-                                attributes: {
-                                    let mut m = HashMap::new();
-                                    m.insert("href".into(), "https://crates.io".into());
-                                    m
-                                },
-                                text: None,
-                                visible: true,
-                                bounding_box: None,
-                                children: vec![SimplifiedNode {
-                                    backend_node_id: 4,
-                                    tag: "h3".into(),
-                                    attributes: HashMap::new(),
-                                    text: Some("crates.io".into()),
-                                    visible: true,
-                                    bounding_box: None,
-                                    children: vec![],
-                                }],
+                children: vec![SimplifiedNode {
+                    backend_node_id: 2,
+                    tag: "div".into(),
+                    attributes: HashMap::new(),
+                    text: None,
+                    visible: true,
+                    bounding_box: None,
+                    children: vec![
+                        SimplifiedNode {
+                            backend_node_id: 3,
+                            tag: "a".into(),
+                            attributes: {
+                                let mut m = HashMap::new();
+                                m.insert("href".into(), "https://crates.io".into());
+                                m
                             },
-                            SimplifiedNode {
-                                backend_node_id: 5,
-                                tag: "div".into(),
-                                attributes: {
-                                    let mut m = HashMap::new();
-                                    m.insert("class".into(), "VwiC3b".into());
-                                    m
-                                },
-                                text: Some("The Rust community's crate registry".into()),
+                            text: None,
+                            visible: true,
+                            bounding_box: None,
+                            children: vec![SimplifiedNode {
+                                backend_node_id: 4,
+                                tag: "h3".into(),
+                                attributes: HashMap::new(),
+                                text: Some("crates.io".into()),
                                 visible: true,
                                 bounding_box: None,
                                 children: vec![],
+                            }],
+                        },
+                        SimplifiedNode {
+                            backend_node_id: 5,
+                            tag: "div".into(),
+                            attributes: {
+                                let mut m = HashMap::new();
+                                m.insert("class".into(), "VwiC3b".into());
+                                m
                             },
-                        ],
-                    },
-                ],
+                            text: Some("The Rust community's crate registry".into()),
+                            visible: true,
+                            bounding_box: None,
+                            children: vec![],
+                        },
+                    ],
+                }],
             }],
         };
 
@@ -1127,7 +1233,7 @@ mod tests {
         let names: Vec<&str> = ["google", "bing", "duckduckgo"]
             .iter()
             .filter(|n| registry.get(n).is_some())
-            .map(|s| *s)
+            .copied()
             .collect();
         assert_eq!(names.len(), 3);
     }
@@ -1141,10 +1247,22 @@ mod tests {
         ];
         for adapter in &adapters {
             let url = adapter.search_url("test");
-            assert!(url.starts_with("https://"), "Adapter {} URL should start with https://", adapter.name());
-            assert!(url.contains("test"), "Adapter {} URL should contain query", adapter.name());
+            assert!(
+                url.starts_with("https://"),
+                "Adapter {} URL should start with https://",
+                adapter.name()
+            );
+            assert!(
+                url.contains("test"),
+                "Adapter {} URL should contain query",
+                adapter.name()
+            );
             let ready = adapter.results_ready_selector();
-            assert!(!ready.is_empty(), "Adapter {} should have a ready selector", adapter.name());
+            assert!(
+                !ready.is_empty(),
+                "Adapter {} should have a ready selector",
+                adapter.name()
+            );
         }
     }
 }

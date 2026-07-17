@@ -2,22 +2,21 @@ use std::net::SocketAddr;
 use std::sync::Arc;
 
 use anyhow::Result;
-use tokio::sync::Mutex;
 use tokio::signal;
+use tokio::sync::Mutex;
 
 use meleys::actions::download::DownloadRegistry;
 use meleys::actions::search::SearchRegistry;
 use meleys::config::Config;
 use meleys::session::SessionManager;
-use meleys::transport::http::{AppState, build_router};
+use meleys::transport::http::{build_router, AppState};
 
 #[tokio::main]
 async fn main() -> Result<()> {
     // Initialize logging
     tracing_subscriber::fmt()
         .with_env_filter(
-            tracing_subscriber::EnvFilter::from_default_env()
-                .add_directive("meleys=info".parse()?)
+            tracing_subscriber::EnvFilter::from_default_env().add_directive("meleys=info".parse()?),
         )
         .init();
 
@@ -25,7 +24,11 @@ async fn main() -> Result<()> {
 
     // Load configuration
     let config = Config::load().unwrap_or_default();
-    tracing::info!("Configuration loaded: HTTP {}:{}", config.server.http_bind, config.server.http_port);
+    tracing::info!(
+        "Configuration loaded: HTTP {}:{}",
+        config.server.http_bind,
+        config.server.http_port
+    );
 
     // Create shared resources
     let session_manager = Arc::new(SessionManager::new(config.clone()));
@@ -59,7 +62,9 @@ async fn main() -> Result<()> {
                 search_registry_clone,
                 downloads_clone,
                 allow_js,
-            ).await {
+            )
+            .await
+            {
                 tracing::error!("MCP server error: {}", e);
             }
         });
@@ -79,7 +84,8 @@ async fn main() -> Result<()> {
 
         let router = build_router(state);
         let addr_str = format!("{}:{}", config.server.http_bind, config.server.http_port);
-        let addr: SocketAddr = addr_str.parse()
+        let addr: SocketAddr = addr_str
+            .parse()
             .map_err(|e| anyhow::anyhow!("Invalid bind address {}: {}", addr_str, e))?;
 
         tracing::info!("Starting HTTP server on http://{}", addr);

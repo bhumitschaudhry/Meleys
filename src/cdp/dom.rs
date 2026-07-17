@@ -110,16 +110,12 @@ fn parse_simplified_node(v: &serde_json::Value) -> anyhow::Result<SimplifiedNode
     let text = v["text"].as_str().map(|s| s.to_string());
     let visible = v["visible"].as_bool().unwrap_or(true);
 
-    let bounding_box = if let Some(bb) = v["bounding_box"].as_object() {
-        Some(Rect {
-            x: bb["x"].as_f64().unwrap_or(0.0),
-            y: bb["y"].as_f64().unwrap_or(0.0),
-            width: bb["width"].as_f64().unwrap_or(0.0),
-            height: bb["height"].as_f64().unwrap_or(0.0),
-        })
-    } else {
-        None
-    };
+    let bounding_box = v["bounding_box"].as_object().map(|bb| Rect {
+        x: bb["x"].as_f64().unwrap_or(0.0),
+        y: bb["y"].as_f64().unwrap_or(0.0),
+        width: bb["width"].as_f64().unwrap_or(0.0),
+        height: bb["height"].as_f64().unwrap_or(0.0),
+    });
 
     let children = if let Some(arr) = v["children"].as_array() {
         arr.iter()
@@ -166,7 +162,11 @@ pub async fn extract_links(
             return result;
         }})()
         "#,
-        if scope == "document" { "document".to_string() } else { format!("document.querySelector({})", serde_json::json!(scope)) },
+        if scope == "document" {
+            "document".to_string()
+        } else {
+            format!("document.querySelector({})", serde_json::json!(scope))
+        },
         if same_origin_only { "true" } else { "false" },
     );
 
@@ -243,16 +243,12 @@ pub async fn query_elements(
                     }
                 }
             }
-            let bounding_box = if let Some(bb) = item["bounding_box"].as_object() {
-                Some(Rect {
-                    x: bb["x"].as_f64().unwrap_or(0.0),
-                    y: bb["y"].as_f64().unwrap_or(0.0),
-                    width: bb["width"].as_f64().unwrap_or(0.0),
-                    height: bb["height"].as_f64().unwrap_or(0.0),
-                })
-            } else {
-                None
-            };
+            let bounding_box = item["bounding_box"].as_object().map(|bb| Rect {
+                x: bb["x"].as_f64().unwrap_or(0.0),
+                y: bb["y"].as_f64().unwrap_or(0.0),
+                width: bb["width"].as_f64().unwrap_or(0.0),
+                height: bb["height"].as_f64().unwrap_or(0.0),
+            });
             elements.push(ElementInfo {
                 backend_node_id: idx as i64,
                 tag: item["tag"].as_str().unwrap_or("unknown").to_string(),

@@ -1,6 +1,6 @@
 use anyhow::Result;
-use chromiumoxide::{Browser, BrowserConfig};
 use chromiumoxide::handler::viewport::Viewport;
+use chromiumoxide::{Browser, BrowserConfig};
 use futures::StreamExt;
 use tokio::task::JoinHandle;
 
@@ -13,7 +13,10 @@ pub struct LaunchResult {
 }
 
 /// Launch a Chromium browser instance based on the given config.
-pub async fn launch_browser(config: &MeleysBrowserConfig, user_data_dir: Option<&str>) -> Result<LaunchResult> {
+pub async fn launch_browser(
+    config: &MeleysBrowserConfig,
+    user_data_dir: Option<&str>,
+) -> Result<LaunchResult> {
     let mut builder = BrowserConfig::builder()
         .no_sandbox()
         .arg("--disable-dev-shm-usage")
@@ -51,21 +54,16 @@ pub async fn launch_browser(config: &MeleysBrowserConfig, user_data_dir: Option<
         builder = builder.user_data_dir(udd);
     }
 
-    let browser_config = builder.build()
+    let browser_config = builder
+        .build()
         .map_err(|e| anyhow::anyhow!("Failed to build browser config: {}", e))?;
 
-    let (browser, mut handler) = Browser::launch(browser_config).await
+    let (browser, mut handler) = Browser::launch(browser_config)
+        .await
         .map_err(|e| anyhow::anyhow!("Failed to launch browser: {}", e))?;
 
     // Spawn handler task
-    let handler_task = tokio::spawn(async move {
-        loop {
-            match handler.next().await {
-                Some(_) => {}
-                None => break,
-            }
-        }
-    });
+    let handler_task = tokio::spawn(async move { while handler.next().await.is_some() {} });
 
     Ok(LaunchResult {
         browser,
@@ -80,11 +78,14 @@ pub fn find_browser_binary() -> Option<String> {
 
     // Standard Program Files locations
     if let Ok(pf) = std::env::var("ProgramFiles") {
-        candidates.push(std::path::PathBuf::from(pf.clone()).join("Google/Chrome/Application/chrome.exe"));
+        candidates.push(
+            std::path::PathBuf::from(pf.clone()).join("Google/Chrome/Application/chrome.exe"),
+        );
         candidates.push(std::path::PathBuf::from(pf).join("Microsoft/Edge/Application/msedge.exe"));
     }
     if let Ok(pf86) = std::env::var("ProgramFiles(x86)") {
-        candidates.push(std::path::PathBuf::from(pf86).join("Google/Chrome/Application/chrome.exe"));
+        candidates
+            .push(std::path::PathBuf::from(pf86).join("Google/Chrome/Application/chrome.exe"));
     }
     // LocalAppData
     if let Ok(local_appdata) = std::env::var("LOCALAPPDATA") {
@@ -165,7 +166,12 @@ pub fn find_browser_binary() -> Option<String> {
     }
 
     // Try via `which`
-    let which_candidates = ["chromium", "chromium-browser", "google-chrome", "google-chrome-stable"];
+    let which_candidates = [
+        "chromium",
+        "chromium-browser",
+        "google-chrome",
+        "google-chrome-stable",
+    ];
     for candidate in &which_candidates {
         if let Ok(output) = std::process::Command::new("which").arg(candidate).output() {
             if output.status.success() {

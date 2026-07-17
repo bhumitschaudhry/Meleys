@@ -53,7 +53,10 @@ mod tests {
         let config = Config::default();
         let manager = Arc::new(SessionManager::new(config));
         let dispatcher = ActionDispatcher::new(manager);
-        assert_eq!(dispatcher.session_manager.default_search_engine(), "duckduckgo");
+        assert_eq!(
+            dispatcher.session_manager.default_search_engine(),
+            "duckduckgo"
+        );
     }
 
     #[test]

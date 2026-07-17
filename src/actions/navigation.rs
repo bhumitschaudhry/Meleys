@@ -29,20 +29,32 @@ pub async fn navigate(
         let page = page_lock.lock().await;
 
         tokio::time::timeout(timeout, async {
-            page.goto(url).await
+            page.goto(url)
+                .await
                 .map_err(|e| anyhow::anyhow!(MeleyError::NavigationFailed(e.to_string())))?;
-            page.wait_for_navigation().await
+            page.wait_for_navigation()
+                .await
                 .map_err(|e| anyhow::anyhow!(MeleyError::NavigationFailed(e.to_string())))?;
             Ok::<(), anyhow::Error>(())
-        }).await
-        .map_err(|_| anyhow::anyhow!(MeleyError::Timeout(format!("Navigation to {} timed out", url))))?
-        .map_err(|e| e)?;
+        })
+        .await
+        .map_err(|_| {
+            anyhow::anyhow!(MeleyError::Timeout(format!(
+                "Navigation to {} timed out",
+                url
+            )))
+        })??;
 
         let current_url = page.url().await.ok().flatten().map(|u| u.to_string());
         let title = page.get_title().await.ok().flatten();
 
-        Ok::<(String, Option<String>, Option<String>), anyhow::Error>((actual_tab_id, current_url, title))
-    }.await;
+        Ok::<(String, Option<String>, Option<String>), anyhow::Error>((
+            actual_tab_id,
+            current_url,
+            title,
+        ))
+    }
+    .await;
 
     match result {
         Ok((tid, current_url, title)) => {
@@ -53,7 +65,14 @@ pub async fn navigate(
         }
         Err(e) => {
             let (code, retryable) = error_info(&e);
-            Observation::failure(session_id, tab_id.unwrap_or(""), "navigate", code, e.to_string(), retryable)
+            Observation::failure(
+                session_id,
+                tab_id.unwrap_or(""),
+                "navigate",
+                code,
+                e.to_string(),
+                retryable,
+            )
         }
     }
 }
@@ -78,18 +97,24 @@ pub async fn go_back(
 
         let page = page_lock.lock().await;
         tokio::time::timeout(timeout, async {
-            page.evaluate("history.go(-1)").await
+            page.evaluate("history.go(-1)")
+                .await
                 .map_err(|e| anyhow::anyhow!(MeleyError::NavigationFailed(e.to_string())))?;
             tokio::time::sleep(Duration::from_millis(500)).await;
             Ok::<(), anyhow::Error>(())
-        }).await
-        .map_err(|_| anyhow::anyhow!(MeleyError::Timeout("go_back timed out".to_string())))?
-        .map_err(|e| e)?;
+        })
+        .await
+        .map_err(|_| anyhow::anyhow!(MeleyError::Timeout("go_back timed out".to_string())))??;
 
         let current_url = page.url().await.ok().flatten().map(|u| u.to_string());
         let title = page.get_title().await.ok().flatten();
-        Ok::<(String, Option<String>, Option<String>), anyhow::Error>((actual_tab_id, current_url, title))
-    }.await;
+        Ok::<(String, Option<String>, Option<String>), anyhow::Error>((
+            actual_tab_id,
+            current_url,
+            title,
+        ))
+    }
+    .await;
 
     match result {
         Ok((tid, url, title)) => {
@@ -100,7 +125,14 @@ pub async fn go_back(
         }
         Err(e) => {
             let (code, retryable) = error_info(&e);
-            Observation::failure(session_id, tab_id.unwrap_or(""), "go_back", code, e.to_string(), retryable)
+            Observation::failure(
+                session_id,
+                tab_id.unwrap_or(""),
+                "go_back",
+                code,
+                e.to_string(),
+                retryable,
+            )
         }
     }
 }
@@ -125,18 +157,24 @@ pub async fn go_forward(
 
         let page = page_lock.lock().await;
         tokio::time::timeout(timeout, async {
-            page.evaluate("history.go(1)").await
+            page.evaluate("history.go(1)")
+                .await
                 .map_err(|e| anyhow::anyhow!(MeleyError::NavigationFailed(e.to_string())))?;
             tokio::time::sleep(Duration::from_millis(500)).await;
             Ok::<(), anyhow::Error>(())
-        }).await
-        .map_err(|_| anyhow::anyhow!(MeleyError::Timeout("go_forward timed out".to_string())))?
-        .map_err(|e| e)?;
+        })
+        .await
+        .map_err(|_| anyhow::anyhow!(MeleyError::Timeout("go_forward timed out".to_string())))??;
 
         let current_url = page.url().await.ok().flatten().map(|u| u.to_string());
         let title = page.get_title().await.ok().flatten();
-        Ok::<(String, Option<String>, Option<String>), anyhow::Error>((actual_tab_id, current_url, title))
-    }.await;
+        Ok::<(String, Option<String>, Option<String>), anyhow::Error>((
+            actual_tab_id,
+            current_url,
+            title,
+        ))
+    }
+    .await;
 
     match result {
         Ok((tid, url, title)) => {
@@ -147,7 +185,14 @@ pub async fn go_forward(
         }
         Err(e) => {
             let (code, retryable) = error_info(&e);
-            Observation::failure(session_id, tab_id.unwrap_or(""), "go_forward", code, e.to_string(), retryable)
+            Observation::failure(
+                session_id,
+                tab_id.unwrap_or(""),
+                "go_forward",
+                code,
+                e.to_string(),
+                retryable,
+            )
         }
     }
 }
@@ -174,23 +219,31 @@ pub async fn reload(
         let page = page_lock.lock().await;
         tokio::time::timeout(timeout, async {
             if ignore_cache {
-                page.evaluate("location.reload(true)").await
+                page.evaluate("location.reload(true)")
+                    .await
                     .map_err(|e| anyhow::anyhow!(MeleyError::NavigationFailed(e.to_string())))?;
             } else {
-                page.reload().await
+                page.reload()
+                    .await
                     .map_err(|e| anyhow::anyhow!(MeleyError::NavigationFailed(e.to_string())))?;
-                page.wait_for_navigation().await
+                page.wait_for_navigation()
+                    .await
                     .map_err(|e| anyhow::anyhow!(MeleyError::NavigationFailed(e.to_string())))?;
             }
             Ok::<(), anyhow::Error>(())
-        }).await
-        .map_err(|_| anyhow::anyhow!(MeleyError::Timeout("reload timed out".to_string())))?
-        .map_err(|e| e)?;
+        })
+        .await
+        .map_err(|_| anyhow::anyhow!(MeleyError::Timeout("reload timed out".to_string())))??;
 
         let current_url = page.url().await.ok().flatten().map(|u| u.to_string());
         let title = page.get_title().await.ok().flatten();
-        Ok::<(String, Option<String>, Option<String>), anyhow::Error>((actual_tab_id, current_url, title))
-    }.await;
+        Ok::<(String, Option<String>, Option<String>), anyhow::Error>((
+            actual_tab_id,
+            current_url,
+            title,
+        ))
+    }
+    .await;
 
     match result {
         Ok((tid, url, title)) => {
@@ -201,12 +254,20 @@ pub async fn reload(
         }
         Err(e) => {
             let (code, retryable) = error_info(&e);
-            Observation::failure(session_id, tab_id.unwrap_or(""), "reload", code, e.to_string(), retryable)
+            Observation::failure(
+                session_id,
+                tab_id.unwrap_or(""),
+                "reload",
+                code,
+                e.to_string(),
+                retryable,
+            )
         }
     }
 }
 
 /// Wait for a condition.
+#[allow(clippy::too_many_arguments)]
 pub async fn wait_for(
     session_manager: &Arc<SessionManager>,
     session_id: &str,
@@ -239,8 +300,13 @@ pub async fn wait_for(
                 tokio::time::sleep(Duration::from_millis(ms)).await;
             }
             "navigation" => {
-                tokio::time::timeout(timeout, page.wait_for_navigation()).await
-                    .map_err(|_| anyhow::anyhow!(MeleyError::Timeout("navigation wait timed out".to_string())))?
+                tokio::time::timeout(timeout, page.wait_for_navigation())
+                    .await
+                    .map_err(|_| {
+                        anyhow::anyhow!(MeleyError::Timeout(
+                            "navigation wait timed out".to_string()
+                        ))
+                    })?
                     .map_err(|e| anyhow::anyhow!(MeleyError::NavigationFailed(e.to_string())))?;
             }
             "selector" => {
@@ -249,11 +315,10 @@ pub async fn wait_for(
                 let poll = Duration::from_millis(poll_ms.unwrap_or(100));
                 tokio::time::timeout(timeout, async {
                     loop {
-                        let js = format!(
-                            "!!document.querySelector({})",
-                            serde_json::json!(sel)
-                        );
-                        let found = page.evaluate(js).await
+                        let js = format!("!!document.querySelector({})", serde_json::json!(sel));
+                        let found = page
+                            .evaluate(js)
+                            .await
                             .ok()
                             .and_then(|r| r.into_value::<bool>().ok())
                             .unwrap_or(false);
@@ -263,31 +328,43 @@ pub async fn wait_for(
                             "hidden" | "detached" => !found,
                             _ => found,
                         };
-                        if done { break; }
+                        if done {
+                            break;
+                        }
                         tokio::time::sleep(poll).await;
                     }
                     Ok::<(), anyhow::Error>(())
-                }).await
-                .map_err(|_| anyhow::anyhow!(MeleyError::Timeout("selector wait timed out".to_string())))?
-                .map_err(|e| e)?;
+                })
+                .await
+                .map_err(|_| {
+                    anyhow::anyhow!(MeleyError::Timeout("selector wait timed out".to_string()))
+                })??;
             }
             "js_expression" => {
                 let expr = js_expr.unwrap_or("true");
                 let poll = Duration::from_millis(poll_ms.unwrap_or(200));
                 tokio::time::timeout(timeout, async {
                     loop {
-                        let truthy = page.evaluate(expr).await
+                        let truthy = page
+                            .evaluate(expr)
+                            .await
                             .ok()
                             .and_then(|r| r.into_value::<serde_json::Value>().ok())
                             .map(|v| v.is_truthy())
                             .unwrap_or(false);
-                        if truthy { break; }
+                        if truthy {
+                            break;
+                        }
                         tokio::time::sleep(poll).await;
                     }
                     Ok::<(), anyhow::Error>(())
-                }).await
-                .map_err(|_| anyhow::anyhow!(MeleyError::Timeout("js_expression wait timed out".to_string())))?
-                .map_err(|e| e)?;
+                })
+                .await
+                .map_err(|_| {
+                    anyhow::anyhow!(MeleyError::Timeout(
+                        "js_expression wait timed out".to_string()
+                    ))
+                })??;
             }
             _ => {
                 tokio::time::sleep(Duration::from_millis(500)).await;
@@ -296,8 +373,13 @@ pub async fn wait_for(
 
         let current_url = page.url().await.ok().flatten().map(|u| u.to_string());
         let title = page.get_title().await.ok().flatten();
-        Ok::<(String, Option<String>, Option<String>), anyhow::Error>((actual_tab_id, current_url, title))
-    }.await;
+        Ok::<(String, Option<String>, Option<String>), anyhow::Error>((
+            actual_tab_id,
+            current_url,
+            title,
+        ))
+    }
+    .await;
 
     match result {
         Ok((tid, url, title)) => {
@@ -308,7 +390,14 @@ pub async fn wait_for(
         }
         Err(e) => {
             let (code, retryable) = error_info(&e);
-            Observation::failure(session_id, tab_id.unwrap_or(""), "wait_for", code, e.to_string(), retryable)
+            Observation::failure(
+                session_id,
+                tab_id.unwrap_or(""),
+                "wait_for",
+                code,
+                e.to_string(),
+                retryable,
+            )
         }
     }
 }

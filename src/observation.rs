@@ -236,7 +236,14 @@ mod tests {
 
     #[test]
     fn test_observation_failure_construction() {
-        let obs = Observation::failure("s1", "t1", "click", "ELEMENT_NOT_FOUND", "no such element", true);
+        let obs = Observation::failure(
+            "s1",
+            "t1",
+            "click",
+            "ELEMENT_NOT_FOUND",
+            "no such element",
+            true,
+        );
         assert!(!obs.success);
         assert_eq!(obs.session_id, "s1");
         assert_eq!(obs.tab_id, "t1");
@@ -263,13 +270,15 @@ mod tests {
 
     #[test]
     fn test_observation_json_roundtrip() {
-        let mut obs = Observation::success("s1", "t1", "get_text", ActionResult::Text("hello".into()));
+        let mut obs =
+            Observation::success("s1", "t1", "get_text", ActionResult::Text("hello".into()));
         obs.url = Some("https://example.com".into());
         obs.title = Some("Example".into());
         obs.status_code = Some(200);
 
         let json = serde_json::to_string(&obs).expect("Serialization failed");
-        let deserialized: Observation = serde_json::from_str(&json).expect("Deserialization failed");
+        let deserialized: Observation =
+            serde_json::from_str(&json).expect("Deserialization failed");
         assert_eq!(deserialized.session_id, "s1");
         assert_eq!(deserialized.tab_id, "t1");
         assert_eq!(deserialized.url, Some("https://example.com".into()));
@@ -326,7 +335,9 @@ mod tests {
     #[test]
     fn test_action_result_screenshot() {
         let obs = Observation::success(
-            "", "", "",
+            "",
+            "",
+            "",
             ActionResult::Screenshot {
                 format: "png".into(),
                 base64: "abc123".into(),
@@ -335,7 +346,12 @@ mod tests {
             },
         );
         match &obs.result {
-            ActionResult::Screenshot { format, base64, width, height } => {
+            ActionResult::Screenshot {
+                format,
+                base64,
+                width,
+                height,
+            } => {
                 assert_eq!(format, "png");
                 assert_eq!(base64, "abc123");
                 assert_eq!(*width, 1280);
@@ -348,13 +364,11 @@ mod tests {
     #[test]
     fn test_observation_with_console_messages() {
         let mut obs = Observation::success("", "", "", ActionResult::Empty);
-        obs.console_messages = vec![
-            ConsoleMessage {
-                level: "error".into(),
-                text: "Uncaught TypeError".into(),
-                timestamp: "2025-01-01T00:00:00Z".into(),
-            },
-        ];
+        obs.console_messages = vec![ConsoleMessage {
+            level: "error".into(),
+            text: "Uncaught TypeError".into(),
+            timestamp: "2025-01-01T00:00:00Z".into(),
+        }];
         let json = serde_json::to_string(&obs).unwrap();
         let d: Observation = serde_json::from_str(&json).unwrap();
         assert_eq!(d.console_messages.len(), 1);
@@ -402,7 +416,12 @@ mod tests {
             },
             text: Some("hello".into()),
             visible: true,
-            bounding_box: Some(Rect { x: 0.0, y: 0.0, width: 100.0, height: 50.0 }),
+            bounding_box: Some(Rect {
+                x: 0.0,
+                y: 0.0,
+                width: 100.0,
+                height: 50.0,
+            }),
             children: vec![],
         };
         let json = serde_json::to_string(&node).unwrap();

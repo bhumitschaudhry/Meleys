@@ -10,6 +10,7 @@ use crate::selector::Selector;
 use crate::session::SessionManager;
 
 /// Click on an element.
+#[allow(clippy::too_many_arguments)]
 pub async fn click(
     session_manager: &Arc<SessionManager>,
     session_id: &str,
@@ -22,70 +23,88 @@ pub async fn click(
 ) -> Observation {
     let timeout = Duration::from_millis(timeout_ms.unwrap_or(10000));
 
-    let result: Result<(String, Option<String>, Option<String>)> = async {
-        let session = session_manager.get_session(session_id).await?;
-        let (actual_tab_id, page_lock) = if let Some(tid) = tab_id {
-            let p = session.get_page(tid).await?;
-            (tid.to_string(), p)
-        } else {
-            session.get_active_page().await?
-        };
-        let page = page_lock.lock().await;
+    let result: Result<(String, Option<String>, Option<String>)> =
+        async {
+            let session = session_manager.get_session(session_id).await?;
+            let (actual_tab_id, page_lock) = if let Some(tid) = tab_id {
+                let p = session.get_page(tid).await?;
+                (tid.to_string(), p)
+            } else {
+                session.get_active_page().await?
+            };
+            let page = page_lock.lock().await;
 
-        tokio::time::timeout(timeout, async {
-            match selector {
-                Selector::Coordinates { x, y } => {
-                    page.move_mouse(Point { x: *x, y: *y }).await
-                        .map_err(|e| anyhow::anyhow!(MeleyError::Internal(e.to_string())))?;
-                    page.click(Point { x: *x, y: *y }).await
-                        .map_err(|e| anyhow::anyhow!(MeleyError::Internal(e.to_string())))?;
-                }
-                Selector::Css(css) => {
-                    let nth_idx = nth.unwrap_or(0);
-                    let elements = page.find_elements(css.as_str()).await
-                        .map_err(|e| anyhow::anyhow!(MeleyError::ElementNotFound(e.to_string())))?;
-                    let el = elements.get(nth_idx)
-                        .ok_or_else(|| anyhow::anyhow!(MeleyError::ElementNotFound(
-                            format!("No element at index {} for selector: {}", nth_idx, css)
-                        )))?;
-                    el.scroll_into_view().await
-                        .map_err(|e| anyhow::anyhow!(MeleyError::Internal(e.to_string())))?;
-                    el.click().await
-                        .map_err(|e| anyhow::anyhow!(MeleyError::ElementNotInteractable(e.to_string())))?;
-                }
-                Selector::XPath(xpath) => {
-                    let nth_idx = nth.unwrap_or(0);
-                    let elements = page.find_xpaths(xpath.as_str()).await
-                        .map_err(|e| anyhow::anyhow!(MeleyError::ElementNotFound(e.to_string())))?;
-                    let el = elements.get(nth_idx)
-                        .ok_or_else(|| anyhow::anyhow!(MeleyError::ElementNotFound(
-                            format!("No element at index {} for XPath: {}", nth_idx, xpath)
-                        )))?;
-                    el.scroll_into_view().await
-                        .map_err(|e| anyhow::anyhow!(MeleyError::Internal(e.to_string())))?;
-                    el.click().await
-                        .map_err(|e| anyhow::anyhow!(MeleyError::ElementNotInteractable(e.to_string())))?;
-                }
-                _ => {
-                    // Fall back to JS-based click
-                    let js = build_click_js(selector, nth.unwrap_or(0));
-                    let result = page.evaluate(js).await
-                        .map_err(|e| anyhow::anyhow!(MeleyError::Internal(e.to_string())))?;
-                    let found = result.into_value::<bool>().unwrap_or(false);
-                    if !found {
-                        return Err(anyhow::anyhow!(MeleyError::ElementNotFound(selector.description())));
+            tokio::time::timeout(timeout, async {
+                match selector {
+                    Selector::Coordinates { x, y } => {
+                        page.move_mouse(Point { x: *x, y: *y })
+                            .await
+                            .map_err(|e| anyhow::anyhow!(MeleyError::Internal(e.to_string())))?;
+                        page.click(Point { x: *x, y: *y })
+                            .await
+                            .map_err(|e| anyhow::anyhow!(MeleyError::Internal(e.to_string())))?;
+                    }
+                    Selector::Css(css) => {
+                        let nth_idx = nth.unwrap_or(0);
+                        let elements = page.find_elements(css.as_str()).await.map_err(|e| {
+                            anyhow::anyhow!(MeleyError::ElementNotFound(e.to_string()))
+                        })?;
+                        let el = elements.get(nth_idx).ok_or_else(|| {
+                            anyhow::anyhow!(MeleyError::ElementNotFound(format!(
+                                "No element at index {} for selector: {}",
+                                nth_idx, css
+                            )))
+                        })?;
+                        el.scroll_into_view()
+                            .await
+                            .map_err(|e| anyhow::anyhow!(MeleyError::Internal(e.to_string())))?;
+                        el.click().await.map_err(|e| {
+                            anyhow::anyhow!(MeleyError::ElementNotInteractable(e.to_string()))
+                        })?;
+                    }
+                    Selector::XPath(xpath) => {
+                        let nth_idx = nth.unwrap_or(0);
+                        let elements = page.find_xpaths(xpath.as_str()).await.map_err(|e| {
+                            anyhow::anyhow!(MeleyError::ElementNotFound(e.to_string()))
+                        })?;
+                        let el = elements.get(nth_idx).ok_or_else(|| {
+                            anyhow::anyhow!(MeleyError::ElementNotFound(format!(
+                                "No element at index {} for XPath: {}",
+                                nth_idx, xpath
+                            )))
+                        })?;
+                        el.scroll_into_view()
+                            .await
+                            .map_err(|e| anyhow::anyhow!(MeleyError::Internal(e.to_string())))?;
+                        el.click().await.map_err(|e| {
+                            anyhow::anyhow!(MeleyError::ElementNotInteractable(e.to_string()))
+                        })?;
+                    }
+                    _ => {
+                        // Fall back to JS-based click
+                        let js = build_click_js(selector, nth.unwrap_or(0));
+                        let result = page
+                            .evaluate(js)
+                            .await
+                            .map_err(|e| anyhow::anyhow!(MeleyError::Internal(e.to_string())))?;
+                        let found = result.into_value::<bool>().unwrap_or(false);
+                        if !found {
+                            return Err(anyhow::anyhow!(MeleyError::ElementNotFound(
+                                selector.description()
+                            )));
+                        }
                     }
                 }
-            }
-            Ok::<(), anyhow::Error>(())
-        }).await
-        .map_err(|_| anyhow::anyhow!(MeleyError::Timeout("click timed out".to_string())))?
-        .map_err(|e| e)?;
+                Ok::<(), anyhow::Error>(())
+            })
+            .await
+            .map_err(|_| anyhow::anyhow!(MeleyError::Timeout("click timed out".to_string())))??;
 
-        let url = page.url().await.ok().flatten();
-        let title = page.get_title().await.ok().flatten();
-        Ok((actual_tab_id, url, title))
-    }.await;
+            let url = page.url().await.ok().flatten();
+            let title = page.get_title().await.ok().flatten();
+            Ok((actual_tab_id, url, title))
+        }
+        .await;
 
     match result {
         Ok((tid, url, title)) => {
@@ -96,7 +115,14 @@ pub async fn click(
         }
         Err(e) => {
             let (code, retryable) = error_code(&e);
-            Observation::failure(session_id, tab_id.unwrap_or(""), "click", code, e.to_string(), retryable)
+            Observation::failure(
+                session_id,
+                tab_id.unwrap_or(""),
+                "click",
+                code,
+                e.to_string(),
+                retryable,
+            )
         }
     }
 }
@@ -116,6 +142,7 @@ fn build_click_js(selector: &Selector, nth: usize) -> String {
 }
 
 /// Type text into an element.
+#[allow(clippy::too_many_arguments)]
 pub async fn type_text(
     session_manager: &Arc<SessionManager>,
     session_id: &str,
@@ -140,14 +167,14 @@ pub async fn type_text(
 
         tokio::time::timeout(timeout, async {
             let element = match selector {
-                Selector::Css(css) => {
-                    page.find_element(css.as_str()).await
-                        .map_err(|e| anyhow::anyhow!(MeleyError::ElementNotFound(e.to_string())))?
-                }
-                Selector::XPath(xpath) => {
-                    page.find_xpath(xpath.as_str()).await
-                        .map_err(|e| anyhow::anyhow!(MeleyError::ElementNotFound(e.to_string())))?
-                }
+                Selector::Css(css) => page
+                    .find_element(css.as_str())
+                    .await
+                    .map_err(|e| anyhow::anyhow!(MeleyError::ElementNotFound(e.to_string())))?,
+                Selector::XPath(xpath) => page
+                    .find_xpath(xpath.as_str())
+                    .await
+                    .map_err(|e| anyhow::anyhow!(MeleyError::ElementNotFound(e.to_string())))?,
                 _ => {
                     // JS focus
                     let js = format!(
@@ -164,36 +191,50 @@ pub async fn type_text(
                         build_find_expr(selector, 0),
                         if clear_first { "true" } else { "false" }
                     );
-                    page.evaluate(js).await
+                    page.evaluate(js)
+                        .await
                         .map_err(|e| anyhow::anyhow!(MeleyError::Internal(e.to_string())))?;
                     // Use keyboard type for fallback
-                    use chromiumoxide::cdp::browser_protocol::input::{DispatchKeyEventParams, DispatchKeyEventType};
+                    use chromiumoxide::cdp::browser_protocol::input::{
+                        DispatchKeyEventParams, DispatchKeyEventType,
+                    };
                     for ch in text.chars() {
                         let key = ch.to_string();
                         page.execute(
                             DispatchKeyEventParams::builder()
                                 .r#type(DispatchKeyEventType::KeyDown)
                                 .text(key.clone())
-                                .build().unwrap()
-                        ).await.ok();
+                                .build()
+                                .unwrap(),
+                        )
+                        .await
+                        .ok();
                         page.execute(
                             DispatchKeyEventParams::builder()
                                 .r#type(DispatchKeyEventType::Char)
                                 .text(key.clone())
-                                .build().unwrap()
-                        ).await.ok();
+                                .build()
+                                .unwrap(),
+                        )
+                        .await
+                        .ok();
                         page.execute(
                             DispatchKeyEventParams::builder()
                                 .r#type(DispatchKeyEventType::KeyUp)
                                 .text(key)
-                                .build().unwrap()
-                        ).await.ok();
+                                .build()
+                                .unwrap(),
+                        )
+                        .await
+                        .ok();
                     }
                     return Ok::<(), anyhow::Error>(());
                 }
             };
 
-            element.focus().await
+            element
+                .focus()
+                .await
                 .map_err(|e| anyhow::anyhow!(MeleyError::Internal(e.to_string())))?;
 
             if clear_first {
@@ -202,11 +243,15 @@ pub async fn type_text(
                         var el = document.activeElement;
                         if (el && 'value' in el) el.value = '';
                         return true;
-                    })()"#
-                ).await.ok();
+                    })()"#,
+                )
+                .await
+                .ok();
             }
 
-            element.type_str(text).await
+            element
+                .type_str(text)
+                .await
                 .map_err(|e| anyhow::anyhow!(MeleyError::ElementNotInteractable(e.to_string())))?;
 
             if let Some(delay) = delay_ms {
@@ -216,14 +261,15 @@ pub async fn type_text(
             }
 
             Ok::<(), anyhow::Error>(())
-        }).await
-        .map_err(|_| anyhow::anyhow!(MeleyError::Timeout("type_text timed out".to_string())))?
-        .map_err(|e| e)?;
+        })
+        .await
+        .map_err(|_| anyhow::anyhow!(MeleyError::Timeout("type_text timed out".to_string())))??;
 
         let url = page.url().await.ok().flatten();
         let title = page.get_title().await.ok().flatten();
         Ok((actual_tab_id, url, title))
-    }.await;
+    }
+    .await;
 
     match result {
         Ok((tid, url, title)) => {
@@ -234,7 +280,14 @@ pub async fn type_text(
         }
         Err(e) => {
             let (code, retryable) = error_code(&e);
-            Observation::failure(session_id, tab_id.unwrap_or(""), "type_text", code, e.to_string(), retryable)
+            Observation::failure(
+                session_id,
+                tab_id.unwrap_or(""),
+                "type_text",
+                code,
+                e.to_string(),
+                retryable,
+            )
         }
     }
 }
@@ -267,16 +320,18 @@ pub async fn press_key(
                     Selector::Css(css) => {
                         if let Ok(el) = page.find_element(css.as_str()).await {
                             el.focus().await.ok();
-                            el.press_key(key).await
-                                .map_err(|e| anyhow::anyhow!(MeleyError::Internal(e.to_string())))?;
+                            el.press_key(key).await.map_err(|e| {
+                                anyhow::anyhow!(MeleyError::Internal(e.to_string()))
+                            })?;
                             return Ok::<(), anyhow::Error>(());
                         }
                     }
                     Selector::XPath(xpath) => {
                         if let Ok(el) = page.find_xpath(xpath.as_str()).await {
                             el.focus().await.ok();
-                            el.press_key(key).await
-                                .map_err(|e| anyhow::anyhow!(MeleyError::Internal(e.to_string())))?;
+                            el.press_key(key).await.map_err(|e| {
+                                anyhow::anyhow!(MeleyError::Internal(e.to_string()))
+                            })?;
                             return Ok::<(), anyhow::Error>(());
                         }
                     }
@@ -285,31 +340,38 @@ pub async fn press_key(
             }
 
             // Send key to page
-            use chromiumoxide::cdp::browser_protocol::input::{DispatchKeyEventParams, DispatchKeyEventType};
+            use chromiumoxide::cdp::browser_protocol::input::{
+                DispatchKeyEventParams, DispatchKeyEventType,
+            };
             page.execute(
                 DispatchKeyEventParams::builder()
                     .r#type(DispatchKeyEventType::KeyDown)
                     .key(key.to_string())
-                    .build().unwrap()
-            ).await
+                    .build()
+                    .unwrap(),
+            )
+            .await
             .map_err(|e| anyhow::anyhow!(MeleyError::Internal(e.to_string())))?;
             page.execute(
                 DispatchKeyEventParams::builder()
                     .r#type(DispatchKeyEventType::KeyUp)
                     .key(key.to_string())
-                    .build().unwrap()
-            ).await
+                    .build()
+                    .unwrap(),
+            )
+            .await
             .map_err(|e| anyhow::anyhow!(MeleyError::Internal(e.to_string())))?;
 
             Ok::<(), anyhow::Error>(())
-        }).await
-        .map_err(|_| anyhow::anyhow!(MeleyError::Timeout("press_key timed out".to_string())))?
-        .map_err(|e| e)?;
+        })
+        .await
+        .map_err(|_| anyhow::anyhow!(MeleyError::Timeout("press_key timed out".to_string())))??;
 
         let url = page.url().await.ok().flatten();
         let title = page.get_title().await.ok().flatten();
         Ok((actual_tab_id, url, title))
-    }.await;
+    }
+    .await;
 
     match result {
         Ok((tid, url, title)) => {
@@ -320,7 +382,14 @@ pub async fn press_key(
         }
         Err(e) => {
             let (code, retryable) = error_code(&e);
-            Observation::failure(session_id, tab_id.unwrap_or(""), "press_key", code, e.to_string(), retryable)
+            Observation::failure(
+                session_id,
+                tab_id.unwrap_or(""),
+                "press_key",
+                code,
+                e.to_string(),
+                retryable,
+            )
         }
     }
 }
@@ -335,38 +404,44 @@ pub async fn hover(
 ) -> Observation {
     let timeout = Duration::from_millis(timeout_ms.unwrap_or(10000));
 
-    let result: Result<(String, Option<String>, Option<String>)> = async {
-        let session = session_manager.get_session(session_id).await?;
-        let (actual_tab_id, page_lock) = if let Some(tid) = tab_id {
-            let p = session.get_page(tid).await?;
-            (tid.to_string(), p)
-        } else {
-            session.get_active_page().await?
-        };
-        let page = page_lock.lock().await;
+    let result: Result<(String, Option<String>, Option<String>)> =
+        async {
+            let session = session_manager.get_session(session_id).await?;
+            let (actual_tab_id, page_lock) = if let Some(tid) = tab_id {
+                let p = session.get_page(tid).await?;
+                (tid.to_string(), p)
+            } else {
+                session.get_active_page().await?
+            };
+            let page = page_lock.lock().await;
 
-        tokio::time::timeout(timeout, async {
-            match selector {
-                Selector::Coordinates { x, y } => {
-                    page.move_mouse(Point { x: *x, y: *y }).await
-                        .map_err(|e| anyhow::anyhow!(MeleyError::Internal(e.to_string())))?;
-                }
-                Selector::Css(css) => {
-                    let el = page.find_element(css.as_str()).await
-                        .map_err(|e| anyhow::anyhow!(MeleyError::ElementNotFound(e.to_string())))?;
-                    el.hover().await
-                        .map_err(|e| anyhow::anyhow!(MeleyError::Internal(e.to_string())))?;
-                }
-                Selector::XPath(xpath) => {
-                    let el = page.find_xpath(xpath.as_str()).await
-                        .map_err(|e| anyhow::anyhow!(MeleyError::ElementNotFound(e.to_string())))?;
-                    el.hover().await
-                        .map_err(|e| anyhow::anyhow!(MeleyError::Internal(e.to_string())))?;
-                }
-                _ => {
-                    // JS hover
-                    let js = format!(
-                        r#"(function() {{
+            tokio::time::timeout(timeout, async {
+                match selector {
+                    Selector::Coordinates { x, y } => {
+                        page.move_mouse(Point { x: *x, y: *y })
+                            .await
+                            .map_err(|e| anyhow::anyhow!(MeleyError::Internal(e.to_string())))?;
+                    }
+                    Selector::Css(css) => {
+                        let el = page.find_element(css.as_str()).await.map_err(|e| {
+                            anyhow::anyhow!(MeleyError::ElementNotFound(e.to_string()))
+                        })?;
+                        el.hover()
+                            .await
+                            .map_err(|e| anyhow::anyhow!(MeleyError::Internal(e.to_string())))?;
+                    }
+                    Selector::XPath(xpath) => {
+                        let el = page.find_xpath(xpath.as_str()).await.map_err(|e| {
+                            anyhow::anyhow!(MeleyError::ElementNotFound(e.to_string()))
+                        })?;
+                        el.hover()
+                            .await
+                            .map_err(|e| anyhow::anyhow!(MeleyError::Internal(e.to_string())))?;
+                    }
+                    _ => {
+                        // JS hover
+                        let js = format!(
+                            r#"(function() {{
                             var el = {};
                             if (!el) return null;
                             var r = el.getBoundingClientRect();
@@ -374,29 +449,33 @@ pub async fn hover(
                             el.dispatchEvent(new MouseEvent('mouseenter', {{bubbles: true}}));
                             return {{ x: r.x + r.width/2, y: r.y + r.height/2 }};
                         }})()"#,
-                        build_find_expr(selector, 0)
-                    );
-                    let val = page.evaluate(js).await
-                        .map_err(|e| anyhow::anyhow!(MeleyError::Internal(e.to_string())))?
-                        .into_value::<serde_json::Value>()
-                        .unwrap_or(serde_json::Value::Null);
-                    if !val.is_null() {
-                        let x = val["x"].as_f64().unwrap_or(0.0);
-                        let y = val["y"].as_f64().unwrap_or(0.0);
-                        page.move_mouse(Point { x, y }).await
-                            .map_err(|e| anyhow::anyhow!(MeleyError::Internal(e.to_string())))?;
+                            build_find_expr(selector, 0)
+                        );
+                        let val = page
+                            .evaluate(js)
+                            .await
+                            .map_err(|e| anyhow::anyhow!(MeleyError::Internal(e.to_string())))?
+                            .into_value::<serde_json::Value>()
+                            .unwrap_or(serde_json::Value::Null);
+                        if !val.is_null() {
+                            let x = val["x"].as_f64().unwrap_or(0.0);
+                            let y = val["y"].as_f64().unwrap_or(0.0);
+                            page.move_mouse(Point { x, y }).await.map_err(|e| {
+                                anyhow::anyhow!(MeleyError::Internal(e.to_string()))
+                            })?;
+                        }
                     }
                 }
-            }
-            Ok::<(), anyhow::Error>(())
-        }).await
-        .map_err(|_| anyhow::anyhow!(MeleyError::Timeout("hover timed out".to_string())))?
-        .map_err(|e| e)?;
+                Ok::<(), anyhow::Error>(())
+            })
+            .await
+            .map_err(|_| anyhow::anyhow!(MeleyError::Timeout("hover timed out".to_string())))??;
 
-        let url = page.url().await.ok().flatten();
-        let title = page.get_title().await.ok().flatten();
-        Ok((actual_tab_id, url, title))
-    }.await;
+            let url = page.url().await.ok().flatten();
+            let title = page.get_title().await.ok().flatten();
+            Ok((actual_tab_id, url, title))
+        }
+        .await;
 
     match result {
         Ok((tid, url, title)) => {
@@ -407,12 +486,20 @@ pub async fn hover(
         }
         Err(e) => {
             let (code, retryable) = error_code(&e);
-            Observation::failure(session_id, tab_id.unwrap_or(""), "hover", code, e.to_string(), retryable)
+            Observation::failure(
+                session_id,
+                tab_id.unwrap_or(""),
+                "hover",
+                code,
+                e.to_string(),
+                retryable,
+            )
         }
     }
 }
 
 /// Scroll the page.
+#[allow(clippy::too_many_arguments)]
 pub async fn scroll(
     session_manager: &Arc<SessionManager>,
     session_id: &str,
@@ -470,18 +557,20 @@ pub async fn scroll(
                     };
                     format!("window.scrollBy({}, {}); true", dx, dy)
                 };
-                page.evaluate(js).await
+                page.evaluate(js)
+                    .await
                     .map_err(|e| anyhow::anyhow!(MeleyError::Internal(e.to_string())))?;
             }
             Ok::<(), anyhow::Error>(())
-        }).await
-        .map_err(|_| anyhow::anyhow!(MeleyError::Timeout("scroll timed out".to_string())))?
-        .map_err(|e| e)?;
+        })
+        .await
+        .map_err(|_| anyhow::anyhow!(MeleyError::Timeout("scroll timed out".to_string())))??;
 
         let url = page.url().await.ok().flatten();
         let title = page.get_title().await.ok().flatten();
         Ok((actual_tab_id, url, title))
-    }.await;
+    }
+    .await;
 
     match result {
         Ok((tid, url, title)) => {
@@ -492,7 +581,14 @@ pub async fn scroll(
         }
         Err(e) => {
             let (code, retryable) = error_code(&e);
-            Observation::failure(session_id, tab_id.unwrap_or(""), "scroll", code, e.to_string(), retryable)
+            Observation::failure(
+                session_id,
+                tab_id.unwrap_or(""),
+                "scroll",
+                code,
+                e.to_string(),
+                retryable,
+            )
         }
     }
 }
@@ -530,33 +626,48 @@ pub async fn select_option(
                 build_find_expr(selector, 0),
                 serde_json::json!(value)
             );
-            let ok = page.evaluate(js).await
+            let ok = page
+                .evaluate(js)
+                .await
                 .map_err(|e| anyhow::anyhow!(MeleyError::Internal(e.to_string())))?
                 .into_value::<bool>()
                 .unwrap_or(false);
             if !ok {
-                return Err(anyhow::anyhow!(MeleyError::ElementNotFound(selector.description())));
+                return Err(anyhow::anyhow!(MeleyError::ElementNotFound(
+                    selector.description()
+                )));
             }
             Ok::<(), anyhow::Error>(())
-        }).await
-        .map_err(|_| anyhow::anyhow!(MeleyError::Timeout("select_option timed out".to_string())))?
-        .map_err(|e| e)?;
+        })
+        .await
+        .map_err(|_| {
+            anyhow::anyhow!(MeleyError::Timeout("select_option timed out".to_string()))
+        })??;
 
         let url = page.url().await.ok().flatten();
         let title = page.get_title().await.ok().flatten();
         Ok((actual_tab_id, url, title))
-    }.await;
+    }
+    .await;
 
     match result {
         Ok((tid, url, title)) => {
-            let mut obs = Observation::success(session_id, tid, "select_option", ActionResult::Empty);
+            let mut obs =
+                Observation::success(session_id, tid, "select_option", ActionResult::Empty);
             obs.url = url;
             obs.title = title;
             obs
         }
         Err(e) => {
             let (code, retryable) = error_code(&e);
-            Observation::failure(session_id, tab_id.unwrap_or(""), "select_option", code, e.to_string(), retryable)
+            Observation::failure(
+                session_id,
+                tab_id.unwrap_or(""),
+                "select_option",
+                code,
+                e.to_string(),
+                retryable,
+            )
         }
     }
 }
@@ -598,46 +709,66 @@ pub async fn set_file_input(
                 GetDocumentParams, QuerySelectorParams, SetFileInputFilesParams,
             };
 
-            let doc = page.execute(GetDocumentParams::default()).await
+            let doc = page
+                .execute(GetDocumentParams::default())
+                .await
                 .map_err(|e| anyhow::anyhow!(MeleyError::Internal(e.to_string())))?;
             let node_id = doc.result.root.node_id;
 
-            let query_result = page.execute(QuerySelectorParams::builder()
-                .node_id(node_id)
-                .selector(css_sel.clone())
-                .build().unwrap()
-            ).await
-            .map_err(|_| anyhow::anyhow!(MeleyError::ElementNotFound(css_sel.clone())))?;
+            let query_result = page
+                .execute(
+                    QuerySelectorParams::builder()
+                        .node_id(node_id)
+                        .selector(css_sel.clone())
+                        .build()
+                        .unwrap(),
+                )
+                .await
+                .map_err(|_| anyhow::anyhow!(MeleyError::ElementNotFound(css_sel.clone())))?;
 
             let el_node_id = query_result.result.node_id;
 
-            page.execute(SetFileInputFilesParams::builder()
-                .files(file_paths.iter().map(|p| p.as_str()).collect::<Vec<_>>())
-                .node_id(el_node_id)
-                .build().unwrap()
-            ).await
+            page.execute(
+                SetFileInputFilesParams::builder()
+                    .files(file_paths.iter().map(|p| p.as_str()).collect::<Vec<_>>())
+                    .node_id(el_node_id)
+                    .build()
+                    .unwrap(),
+            )
+            .await
             .map_err(|e| anyhow::anyhow!(MeleyError::Internal(e.to_string())))?;
 
             Ok::<(), anyhow::Error>(())
-        }).await
-        .map_err(|_| anyhow::anyhow!(MeleyError::Timeout("set_file_input timed out".to_string())))?
-        .map_err(|e| e)?;
+        })
+        .await
+        .map_err(|_| {
+            anyhow::anyhow!(MeleyError::Timeout("set_file_input timed out".to_string()))
+        })??;
 
         let url = page.url().await.ok().flatten();
         let title = page.get_title().await.ok().flatten();
         Ok((actual_tab_id, url, title))
-    }.await;
+    }
+    .await;
 
     match result {
         Ok((tid, url, title)) => {
-            let mut obs = Observation::success(session_id, tid, "set_file_input", ActionResult::Empty);
+            let mut obs =
+                Observation::success(session_id, tid, "set_file_input", ActionResult::Empty);
             obs.url = url;
             obs.title = title;
             obs
         }
         Err(e) => {
             let (code, retryable) = error_code(&e);
-            Observation::failure(session_id, tab_id.unwrap_or(""), "set_file_input", code, e.to_string(), retryable)
+            Observation::failure(
+                session_id,
+                tab_id.unwrap_or(""),
+                "set_file_input",
+                code,
+                e.to_string(),
+                retryable,
+            )
         }
     }
 }
@@ -646,14 +777,16 @@ pub fn build_find_expr(selector: &Selector, nth: usize) -> String {
     match selector {
         Selector::Css(css) => format!(
             "document.querySelectorAll({})[{}]",
-            serde_json::json!(css), nth
+            serde_json::json!(css),
+            nth
         ),
         Selector::XPath(xpath) => format!(
             r#"(function() {{
                 var r = document.evaluate({}, document, null, XPathResult.ORDERED_NODE_SNAPSHOT_TYPE, null);
                 return r.snapshotItem({});
             }})()"#,
-            serde_json::json!(xpath), nth
+            serde_json::json!(xpath),
+            nth
         ),
         Selector::Text { exact, value } => {
             if *exact {
@@ -666,7 +799,8 @@ pub fn build_find_expr(selector: &Selector, nth: usize) -> String {
                         }}
                         return matches[{}] || null;
                     }})()"#,
-                    serde_json::json!(value), nth
+                    serde_json::json!(value),
+                    nth
                 )
             } else {
                 format!(
@@ -678,13 +812,16 @@ pub fn build_find_expr(selector: &Selector, nth: usize) -> String {
                         }}
                         return matches[{}] || null;
                     }})()"#,
-                    serde_json::json!(value), nth
+                    serde_json::json!(value),
+                    nth
                 )
             }
         }
         Selector::Coordinates { x, y } => format!("document.elementFromPoint({}, {})", x, y),
         Selector::AxNodeId(id) => format!("document.querySelector('[data-ax-node-id=\"{}\"]')", id),
-        Selector::BackendNodeId(id) => format!("document.querySelector('[data-meleys-node-id=\"{}\"]')", id),
+        Selector::BackendNodeId(id) => {
+            format!("document.querySelector('[data-meleys-node-id=\"{}\"]')", id)
+        }
     }
 }
 
@@ -727,7 +864,10 @@ mod tests {
 
     #[test]
     fn test_build_find_expr_text_exact() {
-        let sel = Selector::Text { exact: true, value: "Submit".into() };
+        let sel = Selector::Text {
+            exact: true,
+            value: "Submit".into(),
+        };
         let expr = build_find_expr(&sel, 0);
         assert!(expr.contains("textContent.trim() ==="));
         assert!(expr.contains("Submit"));
@@ -735,7 +875,10 @@ mod tests {
 
     #[test]
     fn test_build_find_expr_text_partial() {
-        let sel = Selector::Text { exact: false, value: "Sub".into() };
+        let sel = Selector::Text {
+            exact: false,
+            value: "Sub".into(),
+        };
         let expr = build_find_expr(&sel, 0);
         assert!(expr.contains("textContent.trim().includes"));
         assert!(expr.contains("Sub"));

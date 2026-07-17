@@ -1,5 +1,5 @@
-use std::path::PathBuf;
 use anyhow::Result;
+use std::path::PathBuf;
 
 /// Manages an on-disk profile directory for a browser session.
 #[derive(Debug, Clone)]
@@ -23,7 +23,14 @@ impl Profile {
 
     /// Create a temporary profile with a generated name.
     pub fn temporary(profiles_base_dir: &str) -> Result<Self> {
-        let name = format!("tmp-{}", uuid::Uuid::new_v4().to_string().split('-').next().unwrap_or("unknown"));
+        let name = format!(
+            "tmp-{}",
+            uuid::Uuid::new_v4()
+                .to_string()
+                .split('-')
+                .next()
+                .unwrap_or("unknown")
+        );
         Self::open(profiles_base_dir, &name)
     }
 
@@ -40,14 +47,20 @@ impl Profile {
 
 fn sanitize_profile_name(name: &str) -> String {
     name.chars()
-        .map(|c| if c.is_ascii_alphanumeric() || c == '-' || c == '_' { c } else { '_' })
+        .map(|c| {
+            if c.is_ascii_alphanumeric() || c == '-' || c == '_' {
+                c
+            } else {
+                '_'
+            }
+        })
         .collect()
 }
 
 fn expand_path(path: &str) -> PathBuf {
-    if path.starts_with("~/") {
+    if let Some(stripped) = path.strip_prefix("~/") {
         if let Some(home) = dirs::home_dir() {
-            return home.join(&path[2..]);
+            return home.join(stripped);
         }
     }
     PathBuf::from(path)
@@ -67,7 +80,9 @@ mod tests {
     fn test_sanitize_profile_name_special_chars() {
         let sanitized = sanitize_profile_name("my profile!@#$%");
         assert_eq!(sanitized.len(), "my profile!@#$%".len());
-        assert!(sanitized.chars().all(|c| c.is_ascii_alphanumeric() || c == '-' || c == '_'));
+        assert!(sanitized
+            .chars()
+            .all(|c| c.is_ascii_alphanumeric() || c == '-' || c == '_'));
         assert!(sanitized.starts_with("my"));
         assert!(sanitized.contains("profile"));
     }
@@ -87,7 +102,9 @@ mod tests {
     fn test_sanitize_profile_name_slashes() {
         let sanitized = sanitize_profile_name("../etc/passwd");
         // '/' and '.' are replaced with '_'
-        assert!(sanitized.chars().all(|c| c.is_ascii_alphanumeric() || c == '-' || c == '_'));
+        assert!(sanitized
+            .chars()
+            .all(|c| c.is_ascii_alphanumeric() || c == '-' || c == '_'));
         assert!(sanitized.contains("etc"));
         assert!(sanitized.contains("passwd"));
         assert!(!sanitized.contains('/'));

@@ -16,7 +16,8 @@ pub async fn new_tab(
         let session = session_manager.get_session(session_id).await?;
         let tab_id = session.new_tab(url).await?;
         Ok((tab_id, url.map(|u| u.to_string())))
-    }.await;
+    }
+    .await;
 
     match result {
         Ok((tab_id, url)) => {
@@ -27,7 +28,12 @@ pub async fn new_tab(
                 is_active: true,
                 loading: false,
             };
-            Observation::success(session_id, tab_id, "new_tab", ActionResult::Tabs(vec![tab_info]))
+            Observation::success(
+                session_id,
+                tab_id,
+                "new_tab",
+                ActionResult::Tabs(vec![tab_info]),
+            )
         }
         Err(e) => {
             let (code, retryable) = error_code(&e);
@@ -46,26 +52,32 @@ pub async fn close_tab(
         let session = session_manager.get_session(session_id).await?;
         session.close_tab(tab_id).await?;
         Ok(())
-    }.await;
+    }
+    .await;
 
     match result {
         Ok(()) => Observation::success(session_id, tab_id, "close_tab", ActionResult::Empty),
         Err(e) => {
             let (code, retryable) = error_code(&e);
-            Observation::failure(session_id, tab_id, "close_tab", code, e.to_string(), retryable)
+            Observation::failure(
+                session_id,
+                tab_id,
+                "close_tab",
+                code,
+                e.to_string(),
+                retryable,
+            )
         }
     }
 }
 
 /// List all tabs in a session.
-pub async fn list_tabs(
-    session_manager: &Arc<SessionManager>,
-    session_id: &str,
-) -> Observation {
+pub async fn list_tabs(session_manager: &Arc<SessionManager>, session_id: &str) -> Observation {
     let result: Result<Vec<TabInfo>> = async {
         let session = session_manager.get_session(session_id).await?;
         session.list_tabs().await
-    }.await;
+    }
+    .await;
 
     match result {
         Ok(tabs) => Observation::success(session_id, "", "list_tabs", ActionResult::Tabs(tabs)),
@@ -90,13 +102,26 @@ pub async fn switch_tab(
         tabs.into_iter()
             .find(|t| t.tab_id == tab_id)
             .ok_or_else(|| anyhow::anyhow!(MeleyError::TabNotFound(tab_id.to_string())))
-    }.await;
+    }
+    .await;
 
     match result {
-        Ok(tab_info) => Observation::success(session_id, tab_id, "switch_tab", ActionResult::Tabs(vec![tab_info])),
+        Ok(tab_info) => Observation::success(
+            session_id,
+            tab_id,
+            "switch_tab",
+            ActionResult::Tabs(vec![tab_info]),
+        ),
         Err(e) => {
             let (code, retryable) = error_code(&e);
-            Observation::failure(session_id, tab_id, "switch_tab", code, e.to_string(), retryable)
+            Observation::failure(
+                session_id,
+                tab_id,
+                "switch_tab",
+                code,
+                e.to_string(),
+                retryable,
+            )
         }
     }
 }

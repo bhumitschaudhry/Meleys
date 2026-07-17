@@ -63,7 +63,8 @@ impl SessionManager {
         let launch_result = crate::cdp::launcher::launch_browser(
             &browser_config,
             Some(profile.path_str().as_str()),
-        ).await?;
+        )
+        .await?;
 
         let session = Arc::new(BrowserSession::new(
             session_id.clone(),
@@ -94,7 +95,8 @@ impl SessionManager {
     pub async fn close_session(&self, session_id: &str) -> Result<()> {
         let session = {
             let mut sessions = self.sessions.write().await;
-            sessions.remove(session_id)
+            sessions
+                .remove(session_id)
                 .ok_or_else(|| MeleyError::SessionNotFound(session_id.to_string()))?
         };
         session.close().await?;
@@ -105,7 +107,8 @@ impl SessionManager {
     /// Get a session by ID.
     pub async fn get_session(&self, session_id: &str) -> Result<Arc<BrowserSession>> {
         let sessions = self.sessions.read().await;
-        sessions.get(session_id)
+        sessions
+            .get(session_id)
             .cloned()
             .ok_or_else(|| anyhow::anyhow!(MeleyError::SessionNotFound(session_id.to_string())))
     }
@@ -116,7 +119,9 @@ impl SessionManager {
         let mut result = Vec::new();
         for (id, session) in sessions.iter() {
             let tab_count = session.tab_count().await;
-            let engine = session.get_default_search_engine().await
+            let engine = session
+                .get_default_search_engine()
+                .await
                 .unwrap_or_else(|| self.config.search.default_engine.clone());
             result.push(SessionInfo {
                 session_id: id.clone(),

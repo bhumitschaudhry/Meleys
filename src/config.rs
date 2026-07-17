@@ -1,7 +1,10 @@
-use figment::{providers::{Env, Format, Toml}, Figment};
+use figment::{
+    providers::{Env, Format, Toml},
+    Figment,
+};
 use serde::{Deserialize, Serialize};
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
 pub struct Config {
     #[serde(default)]
     pub server: ServerConfig,
@@ -25,9 +28,15 @@ pub struct ServerConfig {
     pub mcp_transport: String,
 }
 
-fn default_http_port() -> u16 { 8787 }
-fn default_http_bind() -> String { "127.0.0.1".to_string() }
-fn default_mcp_transport() -> String { "stdio".to_string() }
+fn default_http_port() -> u16 {
+    8787
+}
+fn default_http_bind() -> String {
+    "127.0.0.1".to_string()
+}
+fn default_mcp_transport() -> String {
+    "stdio".to_string()
+}
 
 impl Default for ServerConfig {
     fn default() -> Self {
@@ -66,7 +75,9 @@ pub struct BrowserConfig {
     pub profile_dir: String,
 }
 
-fn default_headless() -> bool { true }
+fn default_headless() -> bool {
+    true
+}
 fn default_profile_dir() -> String {
     dirs::data_local_dir()
         .map(|d| d.join("meleys").join("profiles"))
@@ -92,7 +103,9 @@ pub struct SearchConfig {
     pub default_engine: String,
 }
 
-fn default_search_engine() -> String { "duckduckgo".to_string() }
+fn default_search_engine() -> String {
+    "duckduckgo".to_string()
+}
 
 impl Default for SearchConfig {
     fn default() -> Self {
@@ -114,10 +127,18 @@ pub struct LimitsConfig {
     pub allow_evaluate_js: bool,
 }
 
-fn default_max_sessions() -> usize { 8 }
-fn default_action_timeout_ms() -> u64 { 30000 }
-fn default_max_dom_nodes_per_call() -> usize { 2000 }
-fn default_allow_evaluate_js() -> bool { false }
+fn default_max_sessions() -> usize {
+    8
+}
+fn default_action_timeout_ms() -> u64 {
+    30000
+}
+fn default_max_dom_nodes_per_call() -> usize {
+    2000
+}
+fn default_allow_evaluate_js() -> bool {
+    false
+}
 
 impl Default for LimitsConfig {
     fn default() -> Self {
@@ -151,18 +172,6 @@ impl Default for DownloadsConfig {
         Self {
             dir: default_downloads_dir(),
             allowed_save_dirs: vec![],
-        }
-    }
-}
-
-impl Default for Config {
-    fn default() -> Self {
-        Self {
-            server: ServerConfig::default(),
-            browser: BrowserConfig::default(),
-            search: SearchConfig::default(),
-            limits: LimitsConfig::default(),
-            downloads: DownloadsConfig::default(),
         }
     }
 }
@@ -259,9 +268,15 @@ mod tests {
         assert_eq!(deserialized.server.http_port, config.server.http_port);
         assert_eq!(deserialized.server.http_bind, config.server.http_bind);
         assert_eq!(deserialized.browser.headless, config.browser.headless);
-        assert_eq!(deserialized.search.default_engine, config.search.default_engine);
+        assert_eq!(
+            deserialized.search.default_engine,
+            config.search.default_engine
+        );
         assert_eq!(deserialized.limits.max_sessions, config.limits.max_sessions);
-        assert_eq!(deserialized.limits.allow_evaluate_js, config.limits.allow_evaluate_js);
+        assert_eq!(
+            deserialized.limits.allow_evaluate_js,
+            config.limits.allow_evaluate_js
+        );
     }
 
     #[test]
@@ -347,13 +362,17 @@ allowed_save_dirs = []
     fn test_config_json_serialization() {
         let config = Config::default();
         let json = serde_json::to_string(&config).expect("JSON serialization failed");
-        let deserialized: Config = serde_json::from_str(&json).expect("JSON deserialization failed");
+        let deserialized: Config =
+            serde_json::from_str(&json).expect("JSON deserialization failed");
         assert_eq!(deserialized.server.http_port, 8787);
     }
 
     #[test]
     fn test_viewport_config_custom_values() {
-        let vp = ViewportConfig { width: 1920, height: 1080 };
+        let vp = ViewportConfig {
+            width: 1920,
+            height: 1080,
+        };
         assert_eq!(vp.width, 1920);
         assert_eq!(vp.height, 1080);
         let json = serde_json::to_string(&vp).unwrap();

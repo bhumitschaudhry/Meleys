@@ -1,8 +1,8 @@
-use std::sync::Arc;
+use meleys::actions::extraction::get_text;
+use meleys::actions::navigation::navigate;
 use meleys::config::Config;
 use meleys::session::SessionManager;
-use meleys::actions::navigation::navigate;
-use meleys::actions::extraction::get_text;
+use std::sync::Arc;
 
 #[tokio::test]
 #[ignore = "requires full Chrome/Chromium installation with shared libraries"]
@@ -11,7 +11,9 @@ async fn test_navigation_and_extraction() {
     let manager = Arc::new(SessionManager::new(config));
 
     // Create session
-    let session = manager.create_session(None, Some(true), None).await
+    let session = manager
+        .create_session(None, Some(true), None)
+        .await
         .expect("Failed to create session");
     let session_id = session.session_id.clone();
 
@@ -32,6 +34,8 @@ async fn test_navigation_and_extraction() {
     }
 
     // Clean up
-    manager.close_session(&session_id).await
+    manager
+        .close_session(&session_id)
+        .await
         .expect("Failed to close session");
 }

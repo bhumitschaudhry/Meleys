@@ -76,19 +76,28 @@ pub async fn get_text(
 
     match result {
         Ok((tid, url, title, text)) => {
-            let mut obs = Observation::success(session_id, tid, "get_text", ActionResult::Text(text));
+            let mut obs =
+                Observation::success(session_id, tid, "get_text", ActionResult::Text(text));
             obs.url = url;
             obs.title = title;
             obs
         }
         Err(e) => {
             let (code, retryable) = error_code(&e);
-            Observation::failure(session_id, tab_id.unwrap_or(""), "get_text", code, e.to_string(), retryable)
+            Observation::failure(
+                session_id,
+                tab_id.unwrap_or(""),
+                "get_text",
+                code,
+                e.to_string(),
+                retryable,
+            )
         }
     }
 }
 
 /// Get all links from a page.
+#[allow(clippy::type_complexity)]
 pub async fn get_links(
     session_manager: &Arc<SessionManager>,
     session_id: &str,
@@ -96,7 +105,12 @@ pub async fn get_links(
     scope_selector: Option<&str>,
     same_origin_only: bool,
 ) -> Observation {
-    let result: Result<(String, Option<String>, Option<String>, Vec<crate::observation::LinkInfo>)> = async {
+    let result: Result<(
+        String,
+        Option<String>,
+        Option<String>,
+        Vec<crate::observation::LinkInfo>,
+    )> = async {
         let session = session_manager.get_session(session_id).await?;
         let (actual_tab_id, page_lock) = if let Some(tid) = tab_id {
             let p = session.get_page(tid).await?;
@@ -106,24 +120,34 @@ pub async fn get_links(
         };
         let page = page_lock.lock().await;
 
-        let links = dom::extract_links(&page, scope_selector, same_origin_only).await
+        let links = dom::extract_links(&page, scope_selector, same_origin_only)
+            .await
             .map_err(|e| anyhow::anyhow!(MeleyError::Internal(e.to_string())))?;
 
         let url = page.url().await.ok().flatten().map(|u| u.to_string());
         let title = page.get_title().await.ok().flatten();
         Ok((actual_tab_id, url, title, links))
-    }.await;
+    }
+    .await;
 
     match result {
         Ok((tid, url, title, links)) => {
-            let mut obs = Observation::success(session_id, tid, "get_links", ActionResult::Links(links));
+            let mut obs =
+                Observation::success(session_id, tid, "get_links", ActionResult::Links(links));
             obs.url = url;
             obs.title = title;
             obs
         }
         Err(e) => {
             let (code, retryable) = error_code(&e);
-            Observation::failure(session_id, tab_id.unwrap_or(""), "get_links", code, e.to_string(), retryable)
+            Observation::failure(
+                session_id,
+                tab_id.unwrap_or(""),
+                "get_links",
+                code,
+                e.to_string(),
+                retryable,
+            )
         }
     }
 }
@@ -138,7 +162,12 @@ pub async fn get_dom(
     include_hidden: Option<bool>,
     max_nodes: Option<usize>,
 ) -> Observation {
-    let result: Result<(String, Option<String>, Option<String>, crate::observation::SimplifiedNode)> = async {
+    let result: Result<(
+        String,
+        Option<String>,
+        Option<String>,
+        crate::observation::SimplifiedNode,
+    )> = async {
         let session = session_manager.get_session(session_id).await?;
         let (actual_tab_id, page_lock) = if let Some(tid) = tab_id {
             let p = session.get_page(tid).await?;
@@ -149,7 +178,13 @@ pub async fn get_dom(
         let page = page_lock.lock().await;
 
         let max_n = max_nodes.unwrap_or(session_manager.config().limits.max_dom_nodes_per_call);
-        let sel_str = selector.and_then(|s| if let Selector::Css(c) = s { Some(c.as_str()) } else { None });
+        let sel_str = selector.and_then(|s| {
+            if let Selector::Css(c) = s {
+                Some(c.as_str())
+            } else {
+                None
+            }
+        });
 
         let node = dom::get_simplified_dom(
             &page,
@@ -157,13 +192,15 @@ pub async fn get_dom(
             max_depth.unwrap_or(6),
             include_hidden.unwrap_or(false),
             max_n,
-        ).await
+        )
+        .await
         .map_err(|e| anyhow::anyhow!(MeleyError::Internal(e.to_string())))?;
 
         let url = page.url().await.ok().flatten().map(|u| u.to_string());
         let title = page.get_title().await.ok().flatten();
         Ok((actual_tab_id, url, title, node))
-    }.await;
+    }
+    .await;
 
     match result {
         Ok((tid, url, title, node)) => {
@@ -174,7 +211,14 @@ pub async fn get_dom(
         }
         Err(e) => {
             let (code, retryable) = error_code(&e);
-            Observation::failure(session_id, tab_id.unwrap_or(""), "get_dom", code, e.to_string(), retryable)
+            Observation::failure(
+                session_id,
+                tab_id.unwrap_or(""),
+                "get_dom",
+                code,
+                e.to_string(),
+                retryable,
+            )
         }
     }
 }
@@ -187,7 +231,12 @@ pub async fn get_ax_tree(
     selector: Option<&Selector>,
     max_depth: Option<u32>,
 ) -> Observation {
-    let result: Result<(String, Option<String>, Option<String>, crate::observation::AxNode)> = async {
+    let result: Result<(
+        String,
+        Option<String>,
+        Option<String>,
+        crate::observation::AxNode,
+    )> = async {
         let session = session_manager.get_session(session_id).await?;
         let (actual_tab_id, page_lock) = if let Some(tid) = tab_id {
             let p = session.get_page(tid).await?;
@@ -197,35 +246,48 @@ pub async fn get_ax_tree(
         };
         let page = page_lock.lock().await;
 
-        let sel_str = selector.and_then(|s| if let Selector::Css(c) = s { Some(c.as_str()) } else { None });
+        let sel_str = selector.and_then(|s| {
+            if let Selector::Css(c) = s {
+                Some(c.as_str())
+            } else {
+                None
+            }
+        });
 
-        let tree = ax_tree::get_ax_tree(
-            &page,
-            sel_str,
-            max_depth.unwrap_or(8),
-        ).await
-        .map_err(|e| anyhow::anyhow!(MeleyError::Internal(e.to_string())))?;
+        let tree = ax_tree::get_ax_tree(&page, sel_str, max_depth.unwrap_or(8))
+            .await
+            .map_err(|e| anyhow::anyhow!(MeleyError::Internal(e.to_string())))?;
 
         let url = page.url().await.ok().flatten().map(|u| u.to_string());
         let title = page.get_title().await.ok().flatten();
         Ok((actual_tab_id, url, title, tree))
-    }.await;
+    }
+    .await;
 
     match result {
         Ok((tid, url, title, tree)) => {
-            let mut obs = Observation::success(session_id, tid, "get_ax_tree", ActionResult::AxTree(tree));
+            let mut obs =
+                Observation::success(session_id, tid, "get_ax_tree", ActionResult::AxTree(tree));
             obs.url = url;
             obs.title = title;
             obs
         }
         Err(e) => {
             let (code, retryable) = error_code(&e);
-            Observation::failure(session_id, tab_id.unwrap_or(""), "get_ax_tree", code, e.to_string(), retryable)
+            Observation::failure(
+                session_id,
+                tab_id.unwrap_or(""),
+                "get_ax_tree",
+                code,
+                e.to_string(),
+                retryable,
+            )
         }
     }
 }
 
 /// Query elements by CSS selector.
+#[allow(clippy::type_complexity)]
 pub async fn query_elements(
     session_manager: &Arc<SessionManager>,
     session_id: &str,
@@ -296,14 +358,26 @@ pub async fn query_elements(
 
     match result {
         Ok((tid, url, title, elements)) => {
-            let mut obs = Observation::success(session_id, tid, "query_elements", ActionResult::Elements(elements));
+            let mut obs = Observation::success(
+                session_id,
+                tid,
+                "query_elements",
+                ActionResult::Elements(elements),
+            );
             obs.url = url;
             obs.title = title;
             obs
         }
         Err(e) => {
             let (code, retryable) = error_code(&e);
-            Observation::failure(session_id, tab_id.unwrap_or(""), "query_elements", code, e.to_string(), retryable)
+            Observation::failure(
+                session_id,
+                tab_id.unwrap_or(""),
+                "query_elements",
+                code,
+                e.to_string(),
+                retryable,
+            )
         }
     }
 }
@@ -318,7 +392,8 @@ pub async fn evaluate_js(
 ) -> Observation {
     if !allow_js {
         return Observation::failure(
-            session_id, tab_id.unwrap_or(""),
+            session_id,
+            tab_id.unwrap_or(""),
             "evaluate_js",
             "JS_EVAL_DISABLED",
             "JavaScript evaluation is disabled. Set allow_evaluate_js=true in config.",
@@ -336,29 +411,39 @@ pub async fn evaluate_js(
         };
         let page = page_lock.lock().await;
 
-        let val = page.evaluate(expression).await
+        let val = page
+            .evaluate(expression)
+            .await
             .map_err(|e| anyhow::anyhow!(MeleyError::Internal(e.to_string())))?
             .into_value::<serde_json::Value>()
             .unwrap_or(serde_json::Value::Null);
 
-        let text = serde_json::to_string(&val)
-            .unwrap_or_else(|_| "null".to_string());
+        let text = serde_json::to_string(&val).unwrap_or_else(|_| "null".to_string());
 
         let url = page.url().await.ok().flatten().map(|u| u.to_string());
         let title = page.get_title().await.ok().flatten();
         Ok((actual_tab_id, url, title, text))
-    }.await;
+    }
+    .await;
 
     match result {
         Ok((tid, url, title, text)) => {
-            let mut obs = Observation::success(session_id, tid, "evaluate_js", ActionResult::Text(text));
+            let mut obs =
+                Observation::success(session_id, tid, "evaluate_js", ActionResult::Text(text));
             obs.url = url;
             obs.title = title;
             obs
         }
         Err(e) => {
             let (code, retryable) = error_code(&e);
-            Observation::failure(session_id, tab_id.unwrap_or(""), "evaluate_js", code, e.to_string(), retryable)
+            Observation::failure(
+                session_id,
+                tab_id.unwrap_or(""),
+                "evaluate_js",
+                code,
+                e.to_string(),
+                retryable,
+            )
         }
     }
 }
@@ -384,14 +469,14 @@ fn parse_elements_from_value(val: &serde_json::Value) -> Vec<crate::observation:
                     }
                 }
             }
-            let bb = if let Some(b) = item["bounding_box"].as_object() {
-                Some(crate::observation::Rect {
+            let bb = item["bounding_box"]
+                .as_object()
+                .map(|b| crate::observation::Rect {
                     x: b["x"].as_f64().unwrap_or(0.0),
                     y: b["y"].as_f64().unwrap_or(0.0),
                     width: b["width"].as_f64().unwrap_or(0.0),
                     height: b["height"].as_f64().unwrap_or(0.0),
-                })
-            } else { None };
+                });
             result.push(crate::observation::ElementInfo {
                 backend_node_id: idx as i64,
                 tag: item["tag"].as_str().unwrap_or("unknown").to_string(),

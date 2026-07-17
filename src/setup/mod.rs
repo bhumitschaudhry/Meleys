@@ -192,7 +192,7 @@ fn strip_trailing_commas(text: &str) -> String {
             let mut ahead = chars.clone();
             let mut skipped = 0;
             let mut next = None;
-            while let Some(nc) = ahead.next() {
+            for nc in &mut ahead {
                 if nc.is_whitespace() {
                     skipped += 1;
                     continue;
@@ -280,7 +280,12 @@ fn remove_deny_permissions(root: &mut Value) {
         if let Some(arr) = perms.get_mut("deny").and_then(|d| d.as_array_mut()) {
             arr.retain(|v| v.as_str() != Some("WebSearch") && v.as_str() != Some("WebFetch"));
         }
-        if perms.get("deny").and_then(|d| d.as_array()).map(|a| a.is_empty()) == Some(true) {
+        if perms
+            .get("deny")
+            .and_then(|d| d.as_array())
+            .map(|a| a.is_empty())
+            == Some(true)
+        {
             perms.remove("deny");
         }
         if perms.is_empty() {
@@ -294,7 +299,10 @@ fn remove_deny_permissions(root: &mut Value) {
 /// Install Meleys into one agent's config. Returns a human-readable status line.
 fn install_agent(agent: &Agent, exe: &Path) -> anyhow::Result<String> {
     let Some(path) = config_path(agent) else {
-        return Ok(format!("{}: skipped (home/config dir not found)", agent.display));
+        return Ok(format!(
+            "{}: skipped (home/config dir not found)",
+            agent.display
+        ));
     };
 
     match agent.kind {
@@ -310,8 +318,7 @@ fn install_agent(agent: &Agent, exe: &Path) -> anyhow::Result<String> {
             write_json(&path, &root)?;
             // Disable built-ins in ~/.claude/settings.json (user scope) if requested.
             if agent.disable_builtin {
-                let settings = dirs::home_dir()
-                    .map(|h| h.join(".claude").join("settings.json"));
+                let settings = dirs::home_dir().map(|h| h.join(".claude").join("settings.json"));
                 if let Some(sp) = settings {
                     let mut sroot = read_json(&sp)?;
                     add_deny_permissions(&mut sroot);
@@ -347,7 +354,10 @@ fn install_agent(agent: &Agent, exe: &Path) -> anyhow::Result<String> {
 /// Remove Meleys from one agent's config (only our managed keys).
 fn uninstall_agent(agent: &Agent) -> anyhow::Result<String> {
     let Some(path) = config_path(agent) else {
-        return Ok(format!("{}: skipped (home/config dir not found)", agent.display));
+        return Ok(format!(
+            "{}: skipped (home/config dir not found)",
+            agent.display
+        ));
     };
     if !path.exists() {
         return Ok(format!("{}: nothing to remove", agent.display));
@@ -385,7 +395,11 @@ fn uninstall_agent(agent: &Agent) -> anyhow::Result<String> {
         }
     }
 
-    Ok(format!("{}: removed from {}", agent.display, path.display()))
+    Ok(format!(
+        "{}: removed from {}",
+        agent.display,
+        path.display()
+    ))
 }
 
 /// Report whether Meleys is currently registered for an agent.
@@ -396,7 +410,11 @@ fn status_agent(agent: &Agent) -> String {
     let root = match read_json(&path) {
         Ok(v) => v,
         Err(_) => {
-            return format!("{}: ? (unreadable config at {})", agent.display, path.display());
+            return format!(
+                "{}: ? (unreadable config at {})",
+                agent.display,
+                path.display()
+            );
         }
     };
     let ok = match agent.kind {
@@ -430,7 +448,11 @@ fn resolve_targets(specified: &[String]) -> Vec<Agent> {
 /// Entry point for `meleys setup <subcommand> [--agents a,b,c] [--no-disable-builtin]`.
 pub fn run(args: &[String]) -> anyhow::Result<()> {
     let exe = std::env::current_exe()?;
-    let exe = if exe.exists() { exe } else { PathBuf::from("meleys") };
+    let exe = if exe.exists() {
+        exe
+    } else {
+        PathBuf::from("meleys")
+    };
 
     let mut subcommand = "install";
     let mut targets: Vec<String> = vec![];
@@ -470,7 +492,10 @@ pub fn run(args: &[String]) -> anyhow::Result<()> {
 
     match subcommand {
         "install" => {
-            println!("Registering Meleys ({}) as browser backend for coding agents...", exe.display());
+            println!(
+                "Registering Meleys ({}) as browser backend for coding agents...",
+                exe.display()
+            );
             for agent in &selected {
                 match install_agent(agent, &exe) {
                     Ok(msg) => println!("  ✓ {}", msg),

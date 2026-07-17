@@ -55,7 +55,9 @@ impl BrowserSession {
 
         let page = {
             let browser = self.browser.lock().await;
-            browser.new_page(navigate_url).await
+            browser
+                .new_page(navigate_url)
+                .await
                 .map_err(|e| anyhow::anyhow!("Failed to create new tab: {}", e))?
         };
 
@@ -67,11 +69,14 @@ impl BrowserSession {
 
         {
             let mut tabs = self.tabs.lock().await;
-            tabs.insert(tab_id.clone(), Tab {
-                tab_id: tab_id.clone(),
-                page: Arc::new(Mutex::new(page)),
-                is_active: is_first,
-            });
+            tabs.insert(
+                tab_id.clone(),
+                Tab {
+                    tab_id: tab_id.clone(),
+                    page: Arc::new(Mutex::new(page)),
+                    is_active: is_first,
+                },
+            );
         }
 
         // Set as active if first tab
@@ -94,12 +99,14 @@ impl BrowserSession {
     /// Get the active tab's page.
     pub async fn get_active_page(&self) -> Result<(String, Arc<Mutex<Page>>)> {
         let active = self.active_tab_id.lock().await;
-        let tab_id = active.clone()
+        let tab_id = active
+            .clone()
             .ok_or_else(|| anyhow::anyhow!(MeleyError::TabNotFound("no active tab".to_string())))?;
         drop(active);
 
         let tabs = self.tabs.lock().await;
-        let page = tabs.get(&tab_id)
+        let page = tabs
+            .get(&tab_id)
             .map(|t| t.page.clone())
             .ok_or_else(|| anyhow::anyhow!(MeleyError::TabNotFound(tab_id.clone())))?;
 
@@ -112,7 +119,10 @@ impl BrowserSession {
         {
             let page_guard = page.lock().await;
             // Clone the page to call close (which takes self)
-            page_guard.clone().close().await
+            page_guard
+                .clone()
+                .close()
+                .await
                 .map_err(|e| anyhow::anyhow!("Failed to close tab: {}", e))?;
         }
 
@@ -181,10 +191,13 @@ impl BrowserSession {
         let (_, page_arc) = self.get_active_page().await?;
         let page = page_arc.lock().await;
 
-        let cookies = page.get_cookies().await
+        let cookies = page
+            .get_cookies()
+            .await
             .map_err(|e| anyhow::anyhow!("Failed to get cookies: {}", e))?;
 
-        Ok(cookies.into_iter()
+        Ok(cookies
+            .into_iter()
             .filter(|c| {
                 if let Some(ref filter_urls) = urls {
                     filter_urls.iter().any(|u| {

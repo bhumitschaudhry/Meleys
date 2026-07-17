@@ -35,15 +35,15 @@ pub async fn download_file(
 
         // Determine save path
         let download_dir = session.profile.downloads_dir();
-        let filename = save_as
-            .map(|s| s.to_string())
-            .unwrap_or_else(|| {
-                url.split('/').last()
-                    .unwrap_or("download")
-                    .split('?').next()
-                    .unwrap_or("download")
-                    .to_string()
-            });
+        let filename = save_as.map(|s| s.to_string()).unwrap_or_else(|| {
+            url.split('/')
+                .next_back()
+                .unwrap_or("download")
+                .split('?')
+                .next()
+                .unwrap_or("download")
+                .to_string()
+        });
         let save_path = download_dir.join(&filename);
 
         let download_id = uuid::Uuid::new_v4().to_string();
@@ -68,13 +68,15 @@ pub async fn download_file(
         );
 
         let result_val = tokio::time::timeout(timeout, async {
-            page.evaluate(fetch_js).await
+            page.evaluate(fetch_js)
+                .await
                 .map_err(|e| anyhow::anyhow!(MeleyError::DownloadFailed(e.to_string())))
-        }).await
-        .map_err(|_| anyhow::anyhow!(MeleyError::Timeout("download timed out".to_string())))?
-        .map_err(|e| e)?;
+        })
+        .await
+        .map_err(|_| anyhow::anyhow!(MeleyError::Timeout("download timed out".to_string())))??;
 
-        let val = result_val.into_value::<serde_json::Value>()
+        let val = result_val
+            .into_value::<serde_json::Value>()
             .map_err(|e| anyhow::anyhow!(MeleyError::DownloadFailed(e.to_string())))?;
 
         if !val["ok"].as_bool().unwrap_or(false) {
@@ -88,12 +90,15 @@ pub async fn download_file(
 
         // Decode and write file
         use base64::Engine;
-        let bytes = base64::engine::general_purpose::STANDARD.decode(b64)
+        let bytes = base64::engine::general_purpose::STANDARD
+            .decode(b64)
             .map_err(|e| anyhow::anyhow!(MeleyError::DownloadFailed(e.to_string())))?;
 
-        tokio::fs::create_dir_all(&download_dir).await
+        tokio::fs::create_dir_all(&download_dir)
+            .await
             .map_err(|e| anyhow::anyhow!(MeleyError::DownloadFailed(e.to_string())))?;
-        tokio::fs::write(&save_path, &bytes).await
+        tokio::fs::write(&save_path, &bytes)
+            .await
             .map_err(|e| anyhow::anyhow!(MeleyError::DownloadFailed(e.to_string())))?;
 
         let info = DownloadInfo {
@@ -115,15 +120,26 @@ pub async fn download_file(
         }
 
         Ok((actual_tab_id, info))
-    }.await;
+    }
+    .await;
 
     match result {
-        Ok((tid, info)) => {
-            Observation::success(session_id, tid, "download_file", ActionResult::Download(info))
-        }
+        Ok((tid, info)) => Observation::success(
+            session_id,
+            tid,
+            "download_file",
+            ActionResult::Download(info),
+        ),
         Err(e) => {
             let (code, retryable) = error_code(&e);
-            Observation::failure(session_id, tab_id.unwrap_or(""), "download_file", code, e.to_string(), retryable)
+            Observation::failure(
+                session_id,
+                tab_id.unwrap_or(""),
+                "download_file",
+                code,
+                e.to_string(),
+                retryable,
+            )
         }
     }
 }
@@ -136,15 +152,23 @@ pub async fn list_downloads(
 ) -> Observation {
     let dl = downloads.lock().await;
     let infos = dl.get(session_id).cloned().unwrap_or_default();
-    Observation::success(session_id, tab_id, "list_downloads", ActionResult::Tabs(
-        infos.iter().map(|d| crate::observation::TabInfo {
-            tab_id: d.id.clone(),
-            url: Some(d.url.clone()),
-            title: Some(d.path.clone()),
-            is_active: false,
-            loading: d.state == "in_progress",
-        }).collect()
-    ))
+    Observation::success(
+        session_id,
+        tab_id,
+        "list_downloads",
+        ActionResult::Tabs(
+            infos
+                .iter()
+                .map(|d| crate::observation::TabInfo {
+                    tab_id: d.id.clone(),
+                    url: Some(d.url.clone()),
+                    title: Some(d.path.clone()),
+                    is_active: false,
+                    loading: d.state == "in_progress",
+                })
+                .collect(),
+        ),
+    )
 }
 
 fn error_code(e: &anyhow::Error) -> (&'static str, bool) {

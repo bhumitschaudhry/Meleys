@@ -2,10 +2,8 @@ use std::sync::Arc;
 
 use anyhow::Result;
 use base64::Engine;
+use chromiumoxide::cdp::browser_protocol::page::{CaptureScreenshotFormat, PrintToPdfParams};
 use chromiumoxide::page::ScreenshotParams;
-use chromiumoxide::cdp::browser_protocol::page::{
-    CaptureScreenshotFormat, PrintToPdfParams,
-};
 
 use crate::error::MeleyError;
 use crate::observation::{ActionResult, Observation};
@@ -72,32 +70,30 @@ pub async fn screenshot(
                 .full_page(full_page);
 
             // If selector is provided, get element clip
-            if let Some(sel) = selector {
-                if let Selector::Css(css) = sel {
-                    let clip_js = format!(
-                        r#"(function() {{
-                            var el = document.querySelector({});
-                            if (!el) return null;
-                            var r = el.getBoundingClientRect();
-                            return {{x: r.x, y: r.y, width: r.width, height: r.height}};
-                        }})()"#,
-                        serde_json::json!(css)
+            if let Some(Selector::Css(css)) = selector {
+                let clip_js = format!(
+                    r#"(function() {{
+                        var el = document.querySelector({});
+                        if (!el) return null;
+                        var r = el.getBoundingClientRect();
+                        return {{x: r.x, y: r.y, width: r.width, height: r.height}};
+                    }})()"#,
+                    serde_json::json!(css)
+                );
+                let val = page.evaluate(clip_js).await
+                    .map_err(|e| anyhow::anyhow!(MeleyError::Internal(e.to_string())))?
+                    .into_value::<serde_json::Value>()
+                    .unwrap_or(serde_json::Value::Null);
+                if !val.is_null() {
+                    params_builder = params_builder.clip(
+                        chromiumoxide::cdp::browser_protocol::page::Viewport {
+                            x: val["x"].as_f64().unwrap_or(0.0),
+                            y: val["y"].as_f64().unwrap_or(0.0),
+                            width: val["width"].as_f64().unwrap_or(1280.0),
+                            height: val["height"].as_f64().unwrap_or(800.0),
+                            scale: 1.0,
+                        }
                     );
-                    let val = page.evaluate(clip_js).await
-                        .map_err(|e| anyhow::anyhow!(MeleyError::Internal(e.to_string())))?
-                        .into_value::<serde_json::Value>()
-                        .unwrap_or(serde_json::Value::Null);
-                    if !val.is_null() {
-                        params_builder = params_builder.clip(
-                            chromiumoxide::cdp::browser_protocol::page::Viewport {
-                                x: val["x"].as_f64().unwrap_or(0.0),
-                                y: val["y"].as_f64().unwrap_or(0.0),
-                                width: val["width"].as_f64().unwrap_or(1280.0),
-                                height: val["height"].as_f64().unwrap_or(800.0),
-                                scale: 1.0,
-                            }
-                        );
-                    }
                 }
             }
 
@@ -113,8 +109,7 @@ pub async fn screenshot(
                 height,
             })
         }).await
-        .map_err(|_| anyhow::anyhow!(MeleyError::Timeout("screenshot timed out".to_string())))?
-        .map_err(|e| e)?;
+        .map_err(|_| anyhow::anyhow!(MeleyError::Timeout("screenshot timed out".to_string())))??;
 
         let url = page.url().await.ok().flatten();
         let title = page.get_title().await.ok().flatten();
@@ -130,7 +125,14 @@ pub async fn screenshot(
         }
         Err(e) => {
             let (code, retryable) = error_code(&e);
-            Observation::failure(session_id, tab_id.unwrap_or(""), "screenshot", code, e.to_string(), retryable)
+            Observation::failure(
+                session_id,
+                tab_id.unwrap_or(""),
+                "screenshot",
+                code,
+                e.to_string(),
+                retryable,
+            )
         }
     }
 }
@@ -156,22 +158,18 @@ pub async fn export_pdf(
         let page = page_lock.lock().await;
 
         let pdf_bytes = tokio::time::timeout(timeout, async {
-            page.pdf(PrintToPdfParams::builder()
-                .landscape(landscape)
-                .build()
-            ).await
-            .map_err(|e| anyhow::anyhow!(MeleyError::Internal(e.to_string())))
-        }).await
-        .map_err(|_| anyhow::anyhow!(MeleyError::Timeout("export_pdf timed out".to_string())))?
-        .map_err(|e| e)?;
+            page.pdf(PrintToPdfParams::builder().landscape(landscape).build())
+                .await
+                .map_err(|e| anyhow::anyhow!(MeleyError::Internal(e.to_string())))
+        })
+        .await
+        .map_err(|_| anyhow::anyhow!(MeleyError::Timeout("export_pdf timed out".to_string())))??;
 
         // Save to profile downloads dir
-        let filename = format!(
-            "page-{}.pdf",
-            chrono::Utc::now().format("%Y%m%d%H%M%S")
-        );
+        let filename = format!("page-{}.pdf", chrono::Utc::now().format("%Y%m%d%H%M%S"));
         let save_path = session.profile.downloads_dir().join(&filename);
-        tokio::fs::write(&save_path, &pdf_bytes).await
+        tokio::fs::write(&save_path, &pdf_bytes)
+            .await
             .map_err(|e| anyhow::anyhow!(MeleyError::Internal(e.to_string())))?;
 
         let download_info = crate::observation::DownloadInfo {
@@ -186,8 +184,14 @@ pub async fn export_pdf(
 
         let url = page.url().await.ok().flatten();
         let title = page.get_title().await.ok().flatten();
-        Ok((actual_tab_id, url, title, ActionResult::Download(download_info)))
-    }.await;
+        Ok((
+            actual_tab_id,
+            url,
+            title,
+            ActionResult::Download(download_info),
+        ))
+    }
+    .await;
 
     match result {
         Ok((tid, url, title, action_result)) => {
@@ -198,7 +202,14 @@ pub async fn export_pdf(
         }
         Err(e) => {
             let (code, retryable) = error_code(&e);
-            Observation::failure(session_id, tab_id.unwrap_or(""), "export_pdf", code, e.to_string(), retryable)
+            Observation::failure(
+                session_id,
+                tab_id.unwrap_or(""),
+                "export_pdf",
+                code,
+                e.to_string(),
+                retryable,
+            )
         }
     }
 }

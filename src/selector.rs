@@ -63,10 +63,7 @@ impl Selector {
                 "null".to_string() // handled separately via mouse events
             }
             Selector::AxNodeId(id) => {
-                format!(
-                    r#"document.querySelector('[data-ax-node-id="{}"]')"#,
-                    id
-                )
+                format!(r#"document.querySelector('[data-ax-node-id="{}"]')"#, id)
             }
             Selector::BackendNodeId(_) => {
                 "null".to_string() // handled via CDP DOM.resolveNode
@@ -122,7 +119,10 @@ mod tests {
 
     #[test]
     fn test_text_to_css_string_returns_none() {
-        let sel = Selector::Text { exact: true, value: "Click".into() };
+        let sel = Selector::Text {
+            exact: true,
+            value: "Click".into(),
+        };
         assert!(sel.to_css_string().is_none());
     }
 
@@ -162,7 +162,10 @@ mod tests {
 
     #[test]
     fn test_text_exact_to_js_expression() {
-        let sel = Selector::Text { exact: true, value: "Submit".into() };
+        let sel = Selector::Text {
+            exact: true,
+            value: "Submit".into(),
+        };
         let js = sel.to_js_expression();
         assert!(js.contains("textContent.trim() ==="));
         assert!(js.contains("Submit"));
@@ -170,7 +173,10 @@ mod tests {
 
     #[test]
     fn test_text_partial_to_js_expression() {
-        let sel = Selector::Text { exact: false, value: "Sub".into() };
+        let sel = Selector::Text {
+            exact: false,
+            value: "Sub".into(),
+        };
         let js = sel.to_js_expression();
         assert!(js.contains("textContent.trim().includes"));
         assert!(js.contains("Sub"));
@@ -212,13 +218,19 @@ mod tests {
 
     #[test]
     fn test_text_exact_description() {
-        let sel = Selector::Text { exact: true, value: "OK".into() };
+        let sel = Selector::Text {
+            exact: true,
+            value: "OK".into(),
+        };
         assert_eq!(sel.description(), r#"Text(exact=true, "OK")"#);
     }
 
     #[test]
     fn test_text_partial_description() {
-        let sel = Selector::Text { exact: false, value: "Ok".into() };
+        let sel = Selector::Text {
+            exact: false,
+            value: "Ok".into(),
+        };
         assert_eq!(sel.description(), r#"Text(exact=false, "Ok")"#);
     }
 
@@ -275,7 +287,10 @@ mod tests {
 
     #[test]
     fn test_selector_json_roundtrip_text() {
-        let sel = Selector::Text { exact: false, value: "hello world".into() };
+        let sel = Selector::Text {
+            exact: false,
+            value: "hello world".into(),
+        };
         let json = serde_json::to_string(&sel).unwrap();
         let d: Selector = serde_json::from_str(&json).unwrap();
         match d {

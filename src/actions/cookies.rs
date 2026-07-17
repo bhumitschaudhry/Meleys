@@ -16,15 +16,26 @@ pub async fn get_cookies(
     let result: Result<Vec<CookieInfo>> = async {
         let session = session_manager.get_session(session_id).await?;
         session.get_cookies(urls).await
-    }.await;
+    }
+    .await;
 
     match result {
-        Ok(cookies) => {
-            Observation::success(session_id, tab_id.unwrap_or(""), "get_cookies", ActionResult::Cookies(cookies))
-        }
+        Ok(cookies) => Observation::success(
+            session_id,
+            tab_id.unwrap_or(""),
+            "get_cookies",
+            ActionResult::Cookies(cookies),
+        ),
         Err(e) => {
             let (code, retryable) = error_code(&e);
-            Observation::failure(session_id, tab_id.unwrap_or(""), "get_cookies", code, e.to_string(), retryable)
+            Observation::failure(
+                session_id,
+                tab_id.unwrap_or(""),
+                "get_cookies",
+                code,
+                e.to_string(),
+                retryable,
+            )
         }
     }
 }
@@ -46,28 +57,45 @@ pub async fn set_cookies(
         };
         let page = page_lock.lock().await;
 
-        let cdp_cookies: Vec<chromiumoxide::cdp::browser_protocol::network::CookieParam> = cookies.iter().map(|c| {
-            chromiumoxide::cdp::browser_protocol::network::CookieParam::builder()
-                .name(c.name.clone())
-                .value(c.value.clone())
-                .domain(c.domain.clone())
-                .path(c.path.clone())
-                .secure(c.secure)
-                .http_only(c.http_only)
-                .build()
-                .unwrap()
-        }).collect();
+        let cdp_cookies: Vec<chromiumoxide::cdp::browser_protocol::network::CookieParam> = cookies
+            .iter()
+            .map(|c| {
+                chromiumoxide::cdp::browser_protocol::network::CookieParam::builder()
+                    .name(c.name.clone())
+                    .value(c.value.clone())
+                    .domain(c.domain.clone())
+                    .path(c.path.clone())
+                    .secure(c.secure)
+                    .http_only(c.http_only)
+                    .build()
+                    .unwrap()
+            })
+            .collect();
 
-        page.set_cookies(cdp_cookies).await
+        page.set_cookies(cdp_cookies)
+            .await
             .map_err(|e| anyhow::anyhow!(MeleyError::Internal(e.to_string())))
             .map(|_| ())
-    }.await;
+    }
+    .await;
 
     match result {
-        Ok(()) => Observation::success(session_id, tab_id.unwrap_or(""), "set_cookies", ActionResult::Empty),
+        Ok(()) => Observation::success(
+            session_id,
+            tab_id.unwrap_or(""),
+            "set_cookies",
+            ActionResult::Empty,
+        ),
         Err(e) => {
             let (code, retryable) = error_code(&e);
-            Observation::failure(session_id, tab_id.unwrap_or(""), "set_cookies", code, e.to_string(), retryable)
+            Observation::failure(
+                session_id,
+                tab_id.unwrap_or(""),
+                "set_cookies",
+                code,
+                e.to_string(),
+                retryable,
+            )
         }
     }
 }
@@ -100,18 +128,27 @@ pub async fn clear_cookies(
                     document.cookie = name + '=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/';
                 }
                 return true;
-            })()"#
-        ).await
+            })()"#,
+        )
+        .await
         .map_err(|e| anyhow::anyhow!(MeleyError::Internal(e.to_string())))?;
 
         Ok((actual_tab_id,))
-    }.await;
+    }
+    .await;
 
     match result {
         Ok((tid,)) => Observation::success(session_id, tid, "clear_cookies", ActionResult::Empty),
         Err(e) => {
             let (code, retryable) = error_code(&e);
-            Observation::failure(session_id, tab_id.unwrap_or(""), "clear_cookies", code, e.to_string(), retryable)
+            Observation::failure(
+                session_id,
+                tab_id.unwrap_or(""),
+                "clear_cookies",
+                code,
+                e.to_string(),
+                retryable,
+            )
         }
     }
 }
@@ -146,19 +183,34 @@ pub async fn get_local_storage(
         })()
         "#;
 
-        let val = page.evaluate(js).await
+        let val = page
+            .evaluate(js)
+            .await
             .map_err(|e| anyhow::anyhow!(MeleyError::Internal(e.to_string())))?
             .into_value::<String>()
             .unwrap_or_else(|_| "{}".to_string());
 
         Ok((actual_tab_id, val))
-    }.await;
+    }
+    .await;
 
     match result {
-        Ok((tid, json)) => Observation::success(session_id, tid, "get_local_storage", ActionResult::Text(json)),
+        Ok((tid, json)) => Observation::success(
+            session_id,
+            tid,
+            "get_local_storage",
+            ActionResult::Text(json),
+        ),
         Err(e) => {
             let (code, retryable) = error_code(&e);
-            Observation::failure(session_id, tab_id.unwrap_or(""), "get_local_storage", code, e.to_string(), retryable)
+            Observation::failure(
+                session_id,
+                tab_id.unwrap_or(""),
+                "get_local_storage",
+                code,
+                e.to_string(),
+                retryable,
+            )
         }
     }
 }

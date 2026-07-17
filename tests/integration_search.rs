@@ -1,11 +1,11 @@
-use meleys::actions::search::{SearchRegistry, SearchEngineAdapter, DuckDuckGoAdapter};
+use meleys::actions::search::{DuckDuckGoAdapter, SearchEngineAdapter, SearchRegistry};
 use meleys::observation::SimplifiedNode;
 use std::collections::HashMap;
 
 #[test]
 fn test_duckduckgo_adapter_extraction() {
     let adapter = DuckDuckGoAdapter;
-    
+
     // Construct a mock DOM node for a DuckDuckGo result
     let result_node = SimplifiedNode {
         backend_node_id: 1,
@@ -41,11 +41,14 @@ fn test_duckduckgo_adapter_extraction() {
                     m.insert("class".to_string(), "result__snippet".to_string());
                     m
                 },
-                text: Some("A language empowering everyone to build reliable and efficient software.".to_string()),
+                text: Some(
+                    "A language empowering everyone to build reliable and efficient software."
+                        .to_string(),
+                ),
                 visible: true,
                 bounding_box: None,
                 children: vec![],
-            }
+            },
         ],
     };
 
@@ -63,14 +66,17 @@ fn test_duckduckgo_adapter_extraction() {
     assert_eq!(results.len(), 1);
     assert_eq!(results[0].title, "Rust Programming Language");
     assert_eq!(results[0].url, "https://rust-lang.org");
-    assert_eq!(results[0].snippet.as_deref(), Some("A language empowering everyone to build reliable and efficient software."));
+    assert_eq!(
+        results[0].snippet.as_deref(),
+        Some("A language empowering everyone to build reliable and efficient software.")
+    );
 }
 
 #[test]
 fn test_registry() {
     let registry = SearchRegistry::new("duckduckgo");
     assert_eq!(registry.default_name(), "duckduckgo");
-    
+
     let engine = registry.get("google");
     assert!(engine.is_some());
     assert_eq!(engine.unwrap().name(), "google");

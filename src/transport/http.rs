@@ -27,46 +27,147 @@ pub struct AppState {
 pub fn build_router(state: AppState) -> Router {
     Router::new()
         // Sessions
-        .route("/v1/sessions", get(list_sessions_handler).post(create_session_handler))
-        .route("/v1/sessions/{session_id}", post(close_session_handler_post))
-        .route("/v1/sessions/{session_id}/close", post(close_session_handler))
-        .route("/v1/sessions/{session_id}/tabs", get(list_tabs_handler).post(new_tab_handler))
-        .route("/v1/sessions/{session_id}/tabs/{tab_id}/close", post(close_tab_handler))
-        .route("/v1/sessions/{session_id}/tabs/{tab_id}/switch", post(switch_tab_handler))
+        .route(
+            "/v1/sessions",
+            get(list_sessions_handler).post(create_session_handler),
+        )
+        .route(
+            "/v1/sessions/{session_id}",
+            post(close_session_handler_post),
+        )
+        .route(
+            "/v1/sessions/{session_id}/close",
+            post(close_session_handler),
+        )
+        .route(
+            "/v1/sessions/{session_id}/tabs",
+            get(list_tabs_handler).post(new_tab_handler),
+        )
+        .route(
+            "/v1/sessions/{session_id}/tabs/{tab_id}/close",
+            post(close_tab_handler),
+        )
+        .route(
+            "/v1/sessions/{session_id}/tabs/{tab_id}/switch",
+            post(switch_tab_handler),
+        )
         // Navigation
-        .route("/v1/sessions/{session_id}/tabs/{tab_id}/navigate", post(navigate_handler))
-        .route("/v1/sessions/{session_id}/tabs/{tab_id}/go_back", post(go_back_handler))
-        .route("/v1/sessions/{session_id}/tabs/{tab_id}/go_forward", post(go_forward_handler))
-        .route("/v1/sessions/{session_id}/tabs/{tab_id}/reload", post(reload_handler))
-        .route("/v1/sessions/{session_id}/tabs/{tab_id}/wait_for", post(wait_for_handler))
+        .route(
+            "/v1/sessions/{session_id}/tabs/{tab_id}/navigate",
+            post(navigate_handler),
+        )
+        .route(
+            "/v1/sessions/{session_id}/tabs/{tab_id}/go_back",
+            post(go_back_handler),
+        )
+        .route(
+            "/v1/sessions/{session_id}/tabs/{tab_id}/go_forward",
+            post(go_forward_handler),
+        )
+        .route(
+            "/v1/sessions/{session_id}/tabs/{tab_id}/reload",
+            post(reload_handler),
+        )
+        .route(
+            "/v1/sessions/{session_id}/tabs/{tab_id}/wait_for",
+            post(wait_for_handler),
+        )
         // Interaction
-        .route("/v1/sessions/{session_id}/tabs/{tab_id}/click", post(click_handler))
-        .route("/v1/sessions/{session_id}/tabs/{tab_id}/type_text", post(type_text_handler))
-        .route("/v1/sessions/{session_id}/tabs/{tab_id}/press_key", post(press_key_handler))
-        .route("/v1/sessions/{session_id}/tabs/{tab_id}/hover", post(hover_handler))
-        .route("/v1/sessions/{session_id}/tabs/{tab_id}/scroll", post(scroll_handler))
-        .route("/v1/sessions/{session_id}/tabs/{tab_id}/select_option", post(select_option_handler))
-        .route("/v1/sessions/{session_id}/tabs/{tab_id}/set_file_input", post(set_file_input_handler))
+        .route(
+            "/v1/sessions/{session_id}/tabs/{tab_id}/click",
+            post(click_handler),
+        )
+        .route(
+            "/v1/sessions/{session_id}/tabs/{tab_id}/type_text",
+            post(type_text_handler),
+        )
+        .route(
+            "/v1/sessions/{session_id}/tabs/{tab_id}/press_key",
+            post(press_key_handler),
+        )
+        .route(
+            "/v1/sessions/{session_id}/tabs/{tab_id}/hover",
+            post(hover_handler),
+        )
+        .route(
+            "/v1/sessions/{session_id}/tabs/{tab_id}/scroll",
+            post(scroll_handler),
+        )
+        .route(
+            "/v1/sessions/{session_id}/tabs/{tab_id}/select_option",
+            post(select_option_handler),
+        )
+        .route(
+            "/v1/sessions/{session_id}/tabs/{tab_id}/set_file_input",
+            post(set_file_input_handler),
+        )
         // Extraction
-        .route("/v1/sessions/{session_id}/tabs/{tab_id}/get_text", post(get_text_handler))
-        .route("/v1/sessions/{session_id}/tabs/{tab_id}/get_links", post(get_links_handler))
-        .route("/v1/sessions/{session_id}/tabs/{tab_id}/get_dom", post(get_dom_handler))
-        .route("/v1/sessions/{session_id}/tabs/{tab_id}/get_ax_tree", post(get_ax_tree_handler))
-        .route("/v1/sessions/{session_id}/tabs/{tab_id}/query_elements", post(query_elements_handler))
-        .route("/v1/sessions/{session_id}/tabs/{tab_id}/evaluate_js", post(evaluate_js_handler))
+        .route(
+            "/v1/sessions/{session_id}/tabs/{tab_id}/get_text",
+            post(get_text_handler),
+        )
+        .route(
+            "/v1/sessions/{session_id}/tabs/{tab_id}/get_links",
+            post(get_links_handler),
+        )
+        .route(
+            "/v1/sessions/{session_id}/tabs/{tab_id}/get_dom",
+            post(get_dom_handler),
+        )
+        .route(
+            "/v1/sessions/{session_id}/tabs/{tab_id}/get_ax_tree",
+            post(get_ax_tree_handler),
+        )
+        .route(
+            "/v1/sessions/{session_id}/tabs/{tab_id}/query_elements",
+            post(query_elements_handler),
+        )
+        .route(
+            "/v1/sessions/{session_id}/tabs/{tab_id}/evaluate_js",
+            post(evaluate_js_handler),
+        )
         // Capture
-        .route("/v1/sessions/{session_id}/tabs/{tab_id}/screenshot", post(screenshot_handler))
-        .route("/v1/sessions/{session_id}/tabs/{tab_id}/export_pdf", post(export_pdf_handler))
+        .route(
+            "/v1/sessions/{session_id}/tabs/{tab_id}/screenshot",
+            post(screenshot_handler),
+        )
+        .route(
+            "/v1/sessions/{session_id}/tabs/{tab_id}/export_pdf",
+            post(export_pdf_handler),
+        )
         // Downloads
-        .route("/v1/sessions/{session_id}/downloads", get(list_downloads_handler))
-        .route("/v1/sessions/{session_id}/tabs/{tab_id}/download_file", post(download_file_handler))
+        .route(
+            "/v1/sessions/{session_id}/downloads",
+            get(list_downloads_handler),
+        )
+        .route(
+            "/v1/sessions/{session_id}/tabs/{tab_id}/download_file",
+            post(download_file_handler),
+        )
         // Cookies
-        .route("/v1/sessions/{session_id}/tabs/{tab_id}/cookies", get(get_cookies_handler).post(set_cookies_handler).delete(clear_cookies_handler))
-        .route("/v1/sessions/{session_id}/tabs/{tab_id}/local_storage", get(get_local_storage_handler))
+        .route(
+            "/v1/sessions/{session_id}/tabs/{tab_id}/cookies",
+            get(get_cookies_handler)
+                .post(set_cookies_handler)
+                .delete(clear_cookies_handler),
+        )
+        .route(
+            "/v1/sessions/{session_id}/tabs/{tab_id}/local_storage",
+            get(get_local_storage_handler),
+        )
         // Search
-        .route("/v1/sessions/{session_id}/tabs/{tab_id}/search_web", post(search_web_handler))
-        .route("/v1/search_engine", get(get_search_engine_handler).post(set_search_engine_handler))
-        .route("/v1/sessions/{session_id}/search_engine", get(get_session_search_engine_handler).post(set_session_search_engine_handler))
+        .route(
+            "/v1/sessions/{session_id}/tabs/{tab_id}/search_web",
+            post(search_web_handler),
+        )
+        .route(
+            "/v1/search_engine",
+            get(get_search_engine_handler).post(set_search_engine_handler),
+        )
+        .route(
+            "/v1/sessions/{session_id}/search_engine",
+            get(get_session_search_engine_handler).post(set_session_search_engine_handler),
+        )
         // Health
         .route("/v1/health", get(health_handler))
         .layer(TraceLayer::new_for_http())
@@ -282,7 +383,8 @@ async fn create_session_handler(
         req.profile_name,
         req.headless,
         req.default_search_engine,
-    ).await;
+    )
+    .await;
     Json(obs)
 }
 
@@ -315,7 +417,9 @@ async fn new_tab_handler(
     Path(session_id): Path<String>,
     Json(req): Json<NewTabRequest>,
 ) -> Json<Observation> {
-    let obs = crate::actions::tabs::new_tab(&state.session_manager, &session_id, req.url.as_deref()).await;
+    let obs =
+        crate::actions::tabs::new_tab(&state.session_manager, &session_id, req.url.as_deref())
+            .await;
     Json(obs)
 }
 
@@ -347,7 +451,8 @@ async fn navigate_handler(
         &req.url,
         req.wait_until.as_deref(),
         req.timeout_ms,
-    ).await;
+    )
+    .await;
     Json(obs)
 }
 
@@ -358,8 +463,12 @@ async fn go_back_handler(
 ) -> Json<Observation> {
     let timeout_ms = body.and_then(|b| b.timeout_ms);
     let obs = crate::actions::navigation::go_back(
-        &state.session_manager, &session_id, Some(&tab_id), timeout_ms,
-    ).await;
+        &state.session_manager,
+        &session_id,
+        Some(&tab_id),
+        timeout_ms,
+    )
+    .await;
     Json(obs)
 }
 
@@ -370,8 +479,12 @@ async fn go_forward_handler(
 ) -> Json<Observation> {
     let timeout_ms = body.and_then(|b| b.timeout_ms);
     let obs = crate::actions::navigation::go_forward(
-        &state.session_manager, &session_id, Some(&tab_id), timeout_ms,
-    ).await;
+        &state.session_manager,
+        &session_id,
+        Some(&tab_id),
+        timeout_ms,
+    )
+    .await;
     Json(obs)
 }
 
@@ -384,8 +497,13 @@ async fn reload_handler(
         .map(|b| (b.ignore_cache.unwrap_or(false), b.timeout_ms))
         .unwrap_or((false, None));
     let obs = crate::actions::navigation::reload(
-        &state.session_manager, &session_id, Some(&tab_id), ignore_cache, timeout_ms,
-    ).await;
+        &state.session_manager,
+        &session_id,
+        Some(&tab_id),
+        ignore_cache,
+        timeout_ms,
+    )
+    .await;
     Json(obs)
 }
 
@@ -406,7 +524,8 @@ async fn wait_for_handler(
         req.js_expr.as_deref(),
         req.poll_ms,
         req.sleep_ms,
-    ).await;
+    )
+    .await;
     Json(obs)
 }
 
@@ -424,7 +543,8 @@ async fn click_handler(
         req.click_count,
         req.nth,
         req.timeout_ms,
-    ).await;
+    )
+    .await;
     Json(obs)
 }
 
@@ -442,7 +562,8 @@ async fn type_text_handler(
         req.clear_first.unwrap_or(false),
         req.delay_ms,
         req.timeout_ms,
-    ).await;
+    )
+    .await;
     Json(obs)
 }
 
@@ -458,7 +579,8 @@ async fn press_key_handler(
         &req.key,
         req.selector.as_ref(),
         req.timeout_ms,
-    ).await;
+    )
+    .await;
     Json(obs)
 }
 
@@ -473,7 +595,8 @@ async fn hover_handler(
         Some(&tab_id),
         &req.selector,
         req.timeout_ms,
-    ).await;
+    )
+    .await;
     Json(obs)
 }
 
@@ -491,7 +614,8 @@ async fn scroll_handler(
         req.selector.as_ref(),
         req.to_bottom.unwrap_or(false),
         req.timeout_ms,
-    ).await;
+    )
+    .await;
     Json(obs)
 }
 
@@ -507,7 +631,8 @@ async fn select_option_handler(
         &req.selector,
         &req.value,
         req.timeout_ms,
-    ).await;
+    )
+    .await;
     Json(obs)
 }
 
@@ -523,7 +648,8 @@ async fn set_file_input_handler(
         &req.selector,
         req.file_paths,
         req.timeout_ms,
-    ).await;
+    )
+    .await;
     Json(obs)
 }
 
@@ -532,14 +658,17 @@ async fn get_text_handler(
     Path((session_id, tab_id)): Path<(String, String)>,
     body: Option<Json<GetTextRequest>>,
 ) -> Json<Observation> {
-    let (selector, max_chars) = body.map(|b| (b.0.selector, b.0.max_chars)).unwrap_or((None, None));
+    let (selector, max_chars) = body
+        .map(|b| (b.0.selector, b.0.max_chars))
+        .unwrap_or((None, None));
     let obs = crate::actions::extraction::get_text(
         &state.session_manager,
         &session_id,
         Some(&tab_id),
         selector.as_ref(),
         max_chars,
-    ).await;
+    )
+    .await;
     Json(obs)
 }
 
@@ -557,7 +686,8 @@ async fn get_links_handler(
         Some(&tab_id),
         sel.as_deref(),
         same_origin,
-    ).await;
+    )
+    .await;
     Json(obs)
 }
 
@@ -567,7 +697,10 @@ async fn get_dom_handler(
     body: Option<Json<GetDomRequest>>,
 ) -> Json<Observation> {
     let req = body.map(|b| b.0).unwrap_or(GetDomRequest {
-        selector: None, max_depth: None, include_hidden: None, max_nodes: None,
+        selector: None,
+        max_depth: None,
+        include_hidden: None,
+        max_nodes: None,
     });
     let obs = crate::actions::extraction::get_dom(
         &state.session_manager,
@@ -577,7 +710,8 @@ async fn get_dom_handler(
         req.max_depth,
         req.include_hidden,
         req.max_nodes,
-    ).await;
+    )
+    .await;
     Json(obs)
 }
 
@@ -586,14 +720,18 @@ async fn get_ax_tree_handler(
     Path((session_id, tab_id)): Path<(String, String)>,
     body: Option<Json<GetAxTreeRequest>>,
 ) -> Json<Observation> {
-    let req = body.map(|b| b.0).unwrap_or(GetAxTreeRequest { selector: None, max_depth: None });
+    let req = body.map(|b| b.0).unwrap_or(GetAxTreeRequest {
+        selector: None,
+        max_depth: None,
+    });
     let obs = crate::actions::extraction::get_ax_tree(
         &state.session_manager,
         &session_id,
         Some(&tab_id),
         req.selector.as_ref(),
         req.max_depth,
-    ).await;
+    )
+    .await;
     Json(obs)
 }
 
@@ -608,7 +746,8 @@ async fn query_elements_handler(
         Some(&tab_id),
         &req.selector,
         req.limit,
-    ).await;
+    )
+    .await;
     Json(obs)
 }
 
@@ -623,7 +762,8 @@ async fn evaluate_js_handler(
         Some(&tab_id),
         &req.expression,
         state.allow_js,
-    ).await;
+    )
+    .await;
     Json(obs)
 }
 
@@ -633,7 +773,10 @@ async fn screenshot_handler(
     body: Option<Json<ScreenshotRequest>>,
 ) -> Json<Observation> {
     let req = body.map(|b| b.0).unwrap_or(ScreenshotRequest {
-        selector: None, full_page: None, format: None, timeout_ms: None,
+        selector: None,
+        full_page: None,
+        format: None,
+        timeout_ms: None,
     });
     let obs = crate::actions::capture::screenshot(
         &state.session_manager,
@@ -643,7 +786,8 @@ async fn screenshot_handler(
         req.full_page.unwrap_or(false),
         req.format.as_deref(),
         req.timeout_ms,
-    ).await;
+    )
+    .await;
     Json(obs)
 }
 
@@ -661,7 +805,8 @@ async fn export_pdf_handler(
         Some(&tab_id),
         landscape,
         timeout_ms,
-    ).await;
+    )
+    .await;
     Json(obs)
 }
 
@@ -686,7 +831,8 @@ async fn download_file_handler(
         req.save_as.as_deref(),
         &state.downloads,
         req.timeout_ms,
-    ).await;
+    )
+    .await;
     Json(obs)
 }
 
@@ -701,7 +847,8 @@ async fn get_cookies_handler(
         &session_id,
         Some(&tab_id),
         urls,
-    ).await;
+    )
+    .await;
     Json(obs)
 }
 
@@ -715,7 +862,8 @@ async fn set_cookies_handler(
         &session_id,
         Some(&tab_id),
         req.cookies,
-    ).await;
+    )
+    .await;
     Json(obs)
 }
 
@@ -723,11 +871,9 @@ async fn clear_cookies_handler(
     State(state): State<AppState>,
     Path((session_id, tab_id)): Path<(String, String)>,
 ) -> Json<Observation> {
-    let obs = crate::actions::cookies::clear_cookies(
-        &state.session_manager,
-        &session_id,
-        Some(&tab_id),
-    ).await;
+    let obs =
+        crate::actions::cookies::clear_cookies(&state.session_manager, &session_id, Some(&tab_id))
+            .await;
     Json(obs)
 }
 
@@ -742,7 +888,8 @@ async fn get_local_storage_handler(
         &session_id,
         Some(&tab_id),
         origin.as_deref(),
-    ).await;
+    )
+    .await;
     Json(obs)
 }
 
@@ -760,14 +907,18 @@ async fn search_web_handler(
         req.num_results,
         &state.search_registry,
         req.timeout_ms,
-    ).await;
+    )
+    .await;
     Json(obs)
 }
 
 async fn get_search_engine_handler(State(state): State<AppState>) -> Json<Observation> {
     let obs = crate::actions::search::get_default_search_engine(
-        &state.session_manager, None, &state.search_registry,
-    ).await;
+        &state.session_manager,
+        None,
+        &state.search_registry,
+    )
+    .await;
     Json(obs)
 }
 
@@ -776,8 +927,12 @@ async fn set_search_engine_handler(
     Json(req): Json<SetSearchEngineRequest>,
 ) -> Json<Observation> {
     let obs = crate::actions::search::set_default_search_engine(
-        &state.session_manager, None, &req.engine, &state.search_registry,
-    ).await;
+        &state.session_manager,
+        None,
+        &req.engine,
+        &state.search_registry,
+    )
+    .await;
     Json(obs)
 }
 
@@ -786,8 +941,11 @@ async fn get_session_search_engine_handler(
     Path(session_id): Path<String>,
 ) -> Json<Observation> {
     let obs = crate::actions::search::get_default_search_engine(
-        &state.session_manager, Some(&session_id), &state.search_registry,
-    ).await;
+        &state.session_manager,
+        Some(&session_id),
+        &state.search_registry,
+    )
+    .await;
     Json(obs)
 }
 
@@ -797,18 +955,22 @@ async fn set_session_search_engine_handler(
     Json(req): Json<SetSearchEngineRequest>,
 ) -> Json<Observation> {
     let obs = crate::actions::search::set_default_search_engine(
-        &state.session_manager, Some(&session_id), &req.engine, &state.search_registry,
-    ).await;
+        &state.session_manager,
+        Some(&session_id),
+        &req.engine,
+        &state.search_registry,
+    )
+    .await;
     Json(obs)
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use tokio::sync::Mutex;
     use crate::config::Config;
     use crate::observation::ActionResult;
     use crate::session::SessionManager;
+    use tokio::sync::Mutex;
 
     fn test_state() -> AppState {
         let config = Config::default();
@@ -852,10 +1014,7 @@ mod tests {
     #[tokio::test]
     async fn test_close_nonexistent_session() {
         let state = test_state();
-        let Json(obs) = close_session_handler(
-            State(state),
-            Path("nonexistent-id".into()),
-        ).await;
+        let Json(obs) = close_session_handler(State(state), Path("nonexistent-id".into())).await;
         assert!(!obs.success);
         let err = obs.error.as_ref().unwrap();
         assert_eq!(err.code, "SESSION_NOT_FOUND");
@@ -864,10 +1023,7 @@ mod tests {
     #[tokio::test]
     async fn test_list_tabs_nonexistent_session() {
         let state = test_state();
-        let Json(obs) = list_tabs_handler(
-            State(state),
-            Path("nonexistent-id".into()),
-        ).await;
+        let Json(obs) = list_tabs_handler(State(state), Path("nonexistent-id".into())).await;
         assert!(!obs.success);
     }
 
@@ -878,7 +1034,8 @@ mod tests {
             State(state),
             Path("nonexistent-id".into()),
             Json(NewTabRequest { url: None }),
-        ).await;
+        )
+        .await;
         assert!(!obs.success);
     }
 
@@ -893,7 +1050,8 @@ mod tests {
                 wait_until: None,
                 timeout_ms: None,
             }),
-        ).await;
+        )
+        .await;
         assert!(!obs.success);
     }
 
@@ -910,7 +1068,8 @@ mod tests {
                 nth: None,
                 timeout_ms: None,
             }),
-        ).await;
+        )
+        .await;
         assert!(!obs.success);
     }
 
@@ -924,7 +1083,8 @@ mod tests {
                 selector: None,
                 max_chars: None,
             })),
-        ).await;
+        )
+        .await;
         assert!(!obs.success);
     }
 
@@ -940,7 +1100,8 @@ mod tests {
                 num_results: None,
                 timeout_ms: None,
             }),
-        ).await;
+        )
+        .await;
         assert!(!obs.success);
     }
 
@@ -963,8 +1124,11 @@ mod tests {
         let state = test_state();
         let Json(obs) = set_search_engine_handler(
             State(state.clone()),
-            Json(SetSearchEngineRequest { engine: "google".into() }),
-        ).await;
+            Json(SetSearchEngineRequest {
+                engine: "google".into(),
+            }),
+        )
+        .await;
         assert!(obs.success);
 
         // Verify it changed
@@ -980,8 +1144,11 @@ mod tests {
         let state = test_state();
         let Json(obs) = set_search_engine_handler(
             State(state),
-            Json(SetSearchEngineRequest { engine: "yahoo".into() }),
-        ).await;
+            Json(SetSearchEngineRequest {
+                engine: "yahoo".into(),
+            }),
+        )
+        .await;
         assert!(!obs.success);
     }
 
@@ -994,7 +1161,8 @@ mod tests {
             Json(EvaluateJsRequest {
                 expression: "1+1".into(),
             }),
-        ).await;
+        )
+        .await;
         assert!(!obs.success);
         let err = obs.error.as_ref().unwrap();
         assert_eq!(err.code, "JS_EVAL_DISABLED");
@@ -1007,7 +1175,8 @@ mod tests {
             State(state),
             Path(("nonexistent".into(), "tab1".into())),
             None,
-        ).await;
+        )
+        .await;
         assert!(!obs.success);
     }
 
@@ -1022,17 +1191,15 @@ mod tests {
                 save_as: None,
                 timeout_ms: None,
             }),
-        ).await;
+        )
+        .await;
         assert!(!obs.success);
     }
 
     #[tokio::test]
     async fn test_list_downloads_empty() {
         let state = test_state();
-        let Json(obs) = list_downloads_handler(
-            State(state),
-            Path("nonexistent".into()),
-        ).await;
+        let Json(obs) = list_downloads_handler(State(state), Path("nonexistent".into())).await;
         assert!(obs.success);
     }
 }
