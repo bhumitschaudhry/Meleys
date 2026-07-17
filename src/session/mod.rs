@@ -49,13 +49,13 @@ impl SessionManager {
 
         // Create or open profile
         let profile = if let Some(ref name) = profile_name {
-            Profile::open(&self.config.browser.profile_dir, name)?
+            Profile::open(&self.config.engine.chromium.profile_dir, name)?
         } else {
-            Profile::temporary(&self.config.browser.profile_dir)?
+            Profile::temporary(&self.config.engine.chromium.profile_dir)?
         };
 
         // Launch browser
-        let mut browser_config = self.config.browser.clone();
+        let mut browser_config = self.config.engine.chromium.clone();
         if let Some(h) = headless {
             browser_config.headless = h;
         }

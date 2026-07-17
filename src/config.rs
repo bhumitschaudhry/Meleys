@@ -4,12 +4,81 @@ use figment::{
 };
 use serde::{Deserialize, Serialize};
 
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct EngineConfig {
+    #[serde(default = "default_engine")]
+    pub default: String,
+    #[serde(default)]
+    pub lightpanda: LightpandaConfig,
+    #[serde(default)]
+    pub chromium: BrowserConfig,
+    #[serde(default = "default_fallback_enabled")]
+    pub fallback_enabled: bool,
+    #[serde(default = "default_max_engine_fallbacks")]
+    pub max_engine_fallbacks_per_session: usize,
+}
+
+fn default_engine() -> String {
+    "lightpanda".to_string()
+}
+fn default_fallback_enabled() -> bool {
+    true
+}
+fn default_max_engine_fallbacks() -> usize {
+    1
+}
+
+impl Default for EngineConfig {
+    fn default() -> Self {
+        Self {
+            default: default_engine(),
+            lightpanda: LightpandaConfig::default(),
+            chromium: BrowserConfig::default(),
+            fallback_enabled: default_fallback_enabled(),
+            max_engine_fallbacks_per_session: default_max_engine_fallbacks(),
+        }
+    }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct LightpandaConfig {
+    #[serde(default)]
+    pub binary_path: String,
+    #[serde(default = "default_lightpanda_port")]
+    pub port: u16,
+    #[serde(default = "default_startup_timeout_ms")]
+    pub startup_timeout_ms: u64,
+    #[serde(default = "default_obey_robots")]
+    pub obey_robots: bool,
+}
+
+fn default_lightpanda_port() -> u16 {
+    9223
+}
+fn default_startup_timeout_ms() -> u64 {
+    5000
+}
+fn default_obey_robots() -> bool {
+    true
+}
+
+impl Default for LightpandaConfig {
+    fn default() -> Self {
+        Self {
+            binary_path: String::new(),
+            port: default_lightpanda_port(),
+            startup_timeout_ms: default_startup_timeout_ms(),
+            obey_robots: default_obey_robots(),
+        }
+    }
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize, Default)]
 pub struct Config {
     #[serde(default)]
     pub server: ServerConfig,
     #[serde(default)]
-    pub browser: BrowserConfig,
+    pub engine: EngineConfig,
     #[serde(default)]
     pub search: SearchConfig,
     #[serde(default)]
@@ -171,7 +240,6 @@ impl Default for DownloadsConfig {
 }
 
 impl Config {
-    /// Load configuration from config.toml (if present) and environment variables.
     pub fn load() -> anyhow::Result<Self> {
         let config: Config = Figment::new()
             .merge(Toml::file("config.toml"))
@@ -238,7 +306,7 @@ mod tests {
     fn test_default_config() {
         let config = Config::default();
         assert_eq!(config.server.http_port, 8787);
-        assert!(config.browser.headless);
+        assert!(config.engine.chromium.headless);
         assert_eq!(config.search.default_engine, "duckduckgo");
         assert_eq!(config.limits.max_sessions, 8);
     }
@@ -250,7 +318,7 @@ mod tests {
         let deserialized: Config = toml::from_str(&toml_str).expect("Failed to deserialize config");
         assert_eq!(deserialized.server.http_port, config.server.http_port);
         assert_eq!(deserialized.server.http_bind, config.server.http_bind);
-        assert_eq!(deserialized.browser.headless, config.browser.headless);
+        assert_eq!(deserialized.engine.chromium.headless, config.engine.chromium.headless);
         assert_eq!(
             deserialized.search.default_engine,
             config.search.default_engine
@@ -269,7 +337,7 @@ mod tests {
 http_port = 9999
 http_bind = "0.0.0.0"
 
-[browser]
+[engine.chromium]
 executable_path = ""
 headless = false
 default_viewport = { width = 1920, height = 1080 }
@@ -291,9 +359,9 @@ allowed_save_dirs = []
         let config: Config = toml::from_str(toml_str).expect("Failed to parse TOML");
         assert_eq!(config.server.http_port, 9999);
         assert_eq!(config.server.http_bind, "0.0.0.0");
-        assert!(!config.browser.headless);
-        assert_eq!(config.browser.default_viewport.width, 1920);
-        assert_eq!(config.browser.default_viewport.height, 1080);
+        assert!(!config.engine.chromium.headless);
+        assert_eq!(config.engine.chromium.default_viewport.width, 1920);
+        assert_eq!(config.engine.chromium.default_viewport.height, 1080);
         assert_eq!(config.search.default_engine, "google");
         assert_eq!(config.limits.max_sessions, 16);
         assert!(config.limits.allow_evaluate_js);
@@ -306,7 +374,7 @@ allowed_save_dirs = []
 http_port = 3000
 http_bind = "127.0.0.1"
 
-[browser]
+[engine.chromium]
 executable_path = ""
 headless = true
 default_viewport = { width = 1280, height = 800 }
@@ -328,7 +396,7 @@ allowed_save_dirs = []
         let config: Config = toml::from_str(toml_str).unwrap();
         assert_eq!(config.server.http_port, 3000);
         assert_eq!(config.server.http_bind, "127.0.0.1");
-        assert!(config.browser.headless);
+        assert!(config.engine.chromium.headless);
         assert_eq!(config.search.default_engine, "duckduckgo");
     }
 
@@ -352,5 +420,22 @@ allowed_save_dirs = []
         let json = serde_json::to_string(&vp).unwrap();
         assert!(json.contains("1920"));
         assert!(json.contains("1080"));
+    }
+
+    #[test]
+    fn test_default_engine_config() {
+        let engine = EngineConfig::default();
+        assert_eq!(engine.default, "lightpanda");
+        assert!(engine.fallback_enabled);
+        assert_eq!(engine.max_engine_fallbacks_per_session, 1);
+    }
+
+    #[test]
+    fn test_default_lightpanda_config() {
+        let lp = LightpandaConfig::default();
+        assert!(lp.binary_path.is_empty());
+        assert_eq!(lp.port, 9223);
+        assert_eq!(lp.startup_timeout_ms, 5000);
+        assert!(lp.obey_robots);
     }
 }
