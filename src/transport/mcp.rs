@@ -335,28 +335,6 @@ fn tools_list() -> Value {
             vec!["session_id", "expression"]
         ),
         tool_schema(
-            "screenshot",
-            "Take a screenshot",
-            json!({
-                "session_id": {"type": "string"},
-                "tab_id": {"type": "string"},
-                "selector": {"type": "object"},
-                "full_page": {"type": "boolean"},
-                "format": {"type": "string", "enum": ["png", "jpeg"]}
-            }),
-            vec!["session_id"]
-        ),
-        tool_schema(
-            "export_pdf",
-            "Export page as PDF",
-            json!({
-                "session_id": {"type": "string"},
-                "tab_id": {"type": "string"},
-                "landscape": {"type": "boolean"}
-            }),
-            vec!["session_id"]
-        ),
-        tool_schema(
             "download_file",
             "Download a file",
             json!({
@@ -835,33 +813,6 @@ async fn dispatch_tool(
                 tab_id,
                 a["expression"].as_str().unwrap_or(""),
                 allow_js,
-            )
-            .await
-        }
-        "screenshot" => {
-            let sel = if a["selector"].is_null() {
-                None
-            } else {
-                Some(parse_selector(&a["selector"]))
-            };
-            crate::actions::capture::screenshot(
-                session_manager,
-                session_id,
-                tab_id,
-                sel.as_ref(),
-                a["full_page"].as_bool().unwrap_or(false),
-                a["format"].as_str(),
-                a["timeout_ms"].as_u64(),
-            )
-            .await
-        }
-        "export_pdf" => {
-            crate::actions::capture::export_pdf(
-                session_manager,
-                session_id,
-                tab_id,
-                a["landscape"].as_bool().unwrap_or(false),
-                a["timeout_ms"].as_u64(),
             )
             .await
         }
