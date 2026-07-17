@@ -2,9 +2,16 @@ name: CI
 
 on:
   push:
-    branches: ["*"]
+    branches: ["**"]
   pull_request:
     branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 env:
   CARGO_TERM_COLOR: always
@@ -36,7 +43,7 @@ jobs:
         with:
           components: clippy
       - uses: Swatinem/rust-cache@v2
-      - run: cargo clippy --all-targets --all-features -- -D warnings
+      - run: cargo clippy --locked --all-targets --all-features -- -D warnings
 
   # ─────────────────────────────────────────────────────────────
   # Build matrix — verify compilation on all target platforms
@@ -57,8 +64,8 @@ jobs:
       - uses: Swatinem/rust-cache@v2
         with:
           key: ${{ matrix.os }}
-      - run: cargo build --verbose
-      - run: cargo build --release --verbose
+      - run: cargo build --locked --verbose
+      - run: cargo build --locked --release --verbose
 
   # ─────────────────────────────────────────────────────────────
   # Unit & integration tests (no browser required)
@@ -78,13 +85,11 @@ jobs:
         with:
           key: test-${{ matrix.os }}
       - name: Run unit tests
-        run: cargo test --verbose -- --skip integration_
+        run: cargo test --locked --lib --bins --verbose
       - name: Run doc tests
-        run: cargo test --doc --verbose
-      - name: Run ignored integration tests (browser-dependent)
-        # These require Chrome and are expected to be skipped
-        run: cargo test --verbose -- --ignored || true
-        continue-on-error: true
+        run: cargo test --locked --doc --verbose
+      - name: Run non-browser integration tests
+        run: cargo test --locked --test integration_search --verbose
 
   # ─────────────────────────────────────────────────────────────
   # MSRV check — ensure minimum supported Rust version compiles
@@ -98,7 +103,7 @@ jobs:
         with:
           toolchain: "1.80.0"
       - uses: Swatinem/rust-cache@v2
-      - run: cargo check --verbose
+      - run: cargo check --locked --verbose
 
   # ─────────────────────────────────────────────────────────────
   # Security audit — check for known vulnerabilities in deps
@@ -152,7 +157,7 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y musl-tools gcc-aarch64-linux-gnu g++-aarch64-linux-gnu
       - name: Build for ${{ matrix.target }}
-        run: cargo build --target ${{ matrix.target }} --verbose
+        run: cargo build --locked --target ${{ matrix.target }} --verbose
         env:
           CARGO_TARGET_AARCH64_UNKNOWN_LINUX_GNU_LINKER: aarch64-linux-gnu-gcc
 
@@ -170,7 +175,7 @@ jobs:
       - name: Install cargo-llvm-cov
         run: cargo install cargo-llvm-cov --locked
       - name: Generate coverage report
-        run: cargo llvm-cov --all-features --workspace --lcov --output-path lcov.info -- --skip integration_
+        run: cargo llvm-cov --locked --all-features --workspace --lcov --output-path lcov.info --lib --bins
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v4
         with:
@@ -190,6 +195,17 @@ jobs:
       - uses: dtolnay/rust-toolchain@stable
       - uses: Swatinem/rust-cache@v2
       - name: Build release binary
-        run: cargo build --release --verbose
-      - name: Verify binary runs
-        run: ./target/release/meleys --help || true
+        run: cargo build --locked --release --verbose
+      - name: Verify binary starts and serves health
+        run: |
+          ./target/release/meleys > /tmp/meleys.log 2>&1 &
+          pid=$!
+          trap 'kill "$pid" 2>/dev/null || true' EXIT
+          for attempt in {1..10}; do
+            if curl --fail --silent http://127.0.0.1:8787/v1/health; then
+              exit 0
+            fi
+            sleep 1
+          done
+          cat /tmp/meleys.log
+          exit 1
