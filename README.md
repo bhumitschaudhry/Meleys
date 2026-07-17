@@ -9,7 +9,7 @@ It exposes core primitives (navigation, click, type, scroll) and returns structu
 
 ---
 
-## 📚 Documentation
+## Documentation
 
 - **[Installation & Setup](docs/setup.md)**: System prerequisites, compilation, and setup.
 - **[Configuration](docs/configuration.md)**: Options for `config.toml` and environment overrides.
@@ -19,7 +19,7 @@ It exposes core primitives (navigation, click, type, scroll) and returns structu
 
 ---
 
-## ⚡ Quick Start
+## Quick Start
 
 ### 1. Build
 ```bash
@@ -50,7 +50,7 @@ curl http://localhost:8787/v1/health
 
 ---
 
-## 🛠️ Selector Types
+## Selector Types
 
 Target elements explicitly using structured selectors:
 
@@ -63,7 +63,7 @@ Target elements explicitly using structured selectors:
 
 ---
 
-## 🏛️ Architecture
+## Architecture
 
 ```
 +--------------------------------------------------------+
@@ -102,7 +102,7 @@ Target elements explicitly using structured selectors:
 
 ---
 
-## 🔒 Security
+## Security
 
 - **Local-Only**: Binds to `127.0.0.1` by default.
 - **No JS Execution**: `evaluate_js` is disabled unless `limits.allow_evaluate_js = true` is set.
@@ -111,6 +111,6 @@ Target elements explicitly using structured selectors:
 
 ---
 
-## 📄 License
+## License
 
 Apache 2.0. See [LICENSE](LICENSE) for details.

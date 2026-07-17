@@ -498,8 +498,8 @@ pub fn run(args: &[String]) -> anyhow::Result<()> {
             );
             for agent in &selected {
                 match install_agent(agent, &exe) {
-                    Ok(msg) => println!("  ✓ {}", msg),
-                    Err(e) => eprintln!("  ✗ {} failed: {}", agent.display, e),
+                    Ok(msg) => println!("  [ok] {}", msg),
+                    Err(e) => eprintln!("  [failed] {} failed: {}", agent.display, e),
                 }
             }
             println!("Done. Restart the relevant agent to load the new MCP server.");
@@ -508,8 +508,8 @@ pub fn run(args: &[String]) -> anyhow::Result<()> {
             println!("Removing Meleys browser-backend registration from coding agents...");
             for agent in &selected {
                 match uninstall_agent(agent) {
-                    Ok(msg) => println!("  ✓ {}", msg),
-                    Err(e) => eprintln!("  ✗ {} failed: {}", agent.display, e),
+                    Ok(msg) => println!("  [ok] {}", msg),
+                    Err(e) => eprintln!("  [failed] {} failed: {}", agent.display, e),
                 }
             }
         }
