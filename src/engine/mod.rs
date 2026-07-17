@@ -21,17 +21,12 @@ impl std::fmt::Display for EngineKind {
     }
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
 pub enum EnginePreference {
     LightpandaOnly,
     ChromiumOnly,
+    #[default]
     LightpandaWithFallback,
-}
-
-impl Default for EnginePreference {
-    fn default() -> Self {
-        Self::LightpandaWithFallback
-    }
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]

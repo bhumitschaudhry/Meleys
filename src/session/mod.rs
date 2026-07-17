@@ -58,7 +58,8 @@ impl SessionManager {
 
         // Select engine based on preference
         let preference = engine_preference.unwrap_or_default();
-        let engine_selection = crate::engine::fallback::select_engine(preference, &self.config.engine)?;
+        let engine_selection =
+            crate::engine::fallback::select_engine(preference, &self.config.engine)?;
 
         // Launch browser
         let mut browser_config = self.config.engine.chromium.clone();

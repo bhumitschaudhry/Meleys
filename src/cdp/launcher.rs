@@ -210,7 +210,11 @@ pub fn find_lightpanda_binary(config_path: &str) -> Option<String> {
         "/opt/homebrew/bin/lightpanda".to_string(),
     ];
     if let Some(home) = dirs::home_dir() {
-        candidates.push(home.join(".local/bin/lightpanda").to_string_lossy().into_owned());
+        candidates.push(
+            home.join(".local/bin/lightpanda")
+                .to_string_lossy()
+                .into_owned(),
+        );
     }
     for candidate in &candidates {
         if std::path::Path::new(candidate).exists() {
@@ -221,6 +225,7 @@ pub fn find_lightpanda_binary(config_path: &str) -> Option<String> {
 }
 
 /// Spawn a Lightpanda subprocess.
+#[allow(clippy::result_large_err)]
 pub fn spawn_lightpanda(
     config: &crate::config::LightpandaConfig,
 ) -> Result<std::process::Child, crate::error::MeleyError> {

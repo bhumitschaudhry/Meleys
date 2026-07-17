@@ -318,7 +318,10 @@ mod tests {
         let deserialized: Config = toml::from_str(&toml_str).expect("Failed to deserialize config");
         assert_eq!(deserialized.server.http_port, config.server.http_port);
         assert_eq!(deserialized.server.http_bind, config.server.http_bind);
-        assert_eq!(deserialized.engine.chromium.headless, config.engine.chromium.headless);
+        assert_eq!(
+            deserialized.engine.chromium.headless,
+            config.engine.chromium.headless
+        );
         assert_eq!(
             deserialized.search.default_engine,
             config.search.default_engine

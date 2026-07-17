@@ -92,10 +92,7 @@ pub enum ActionResult {
     Sessions(Vec<SessionInfo>),
     Elements(Vec<ElementInfo>),
     Cookies(Vec<CookieInfo>),
-    SearchEngine {
-        engine: String,
-        scope: String,
-    },
+    SearchEngine { engine: String, scope: String },
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

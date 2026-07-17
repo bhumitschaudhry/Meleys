@@ -17,7 +17,12 @@ pub async fn create_session(
 ) -> Observation {
     let result: Result<SessionInfo> = async {
         let session = session_manager
-            .create_session(profile_name, headless, default_search_engine, engine_preference)
+            .create_session(
+                profile_name,
+                headless,
+                default_search_engine,
+                engine_preference,
+            )
             .await?;
         let tab_count = session.tab_count().await;
         let engine = session
