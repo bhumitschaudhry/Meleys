@@ -126,15 +126,6 @@ pub fn build_router(state: AppState) -> Router {
             "/v1/sessions/{session_id}/tabs/{tab_id}/evaluate_js",
             post(evaluate_js_handler),
         )
-        // Capture
-        .route(
-            "/v1/sessions/{session_id}/tabs/{tab_id}/screenshot",
-            post(screenshot_handler),
-        )
-        .route(
-            "/v1/sessions/{session_id}/tabs/{tab_id}/export_pdf",
-            post(export_pdf_handler),
-        )
         // Downloads
         .route(
             "/v1/sessions/{session_id}/downloads",
@@ -313,20 +304,6 @@ struct QueryElementsRequest {
 #[derive(Debug, Deserialize)]
 struct EvaluateJsRequest {
     expression: String,
-}
-
-#[derive(Debug, Deserialize)]
-struct ScreenshotRequest {
-    selector: Option<Selector>,
-    full_page: Option<bool>,
-    format: Option<String>,
-    timeout_ms: Option<u64>,
-}
-
-#[derive(Debug, Deserialize)]
-struct ExportPdfRequest {
-    landscape: Option<bool>,
-    timeout_ms: Option<u64>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -774,49 +751,6 @@ async fn evaluate_js_handler(
     Json(obs)
 }
 
-async fn screenshot_handler(
-    State(state): State<AppState>,
-    Path((session_id, tab_id)): Path<(String, String)>,
-    body: Option<Json<ScreenshotRequest>>,
-) -> Json<Observation> {
-    let req = body.map(|b| b.0).unwrap_or(ScreenshotRequest {
-        selector: None,
-        full_page: None,
-        format: None,
-        timeout_ms: None,
-    });
-    let obs = crate::actions::capture::screenshot(
-        &state.session_manager,
-        &session_id,
-        Some(&tab_id),
-        req.selector.as_ref(),
-        req.full_page.unwrap_or(false),
-        req.format.as_deref(),
-        req.timeout_ms,
-    )
-    .await;
-    Json(obs)
-}
-
-async fn export_pdf_handler(
-    State(state): State<AppState>,
-    Path((session_id, tab_id)): Path<(String, String)>,
-    body: Option<Json<ExportPdfRequest>>,
-) -> Json<Observation> {
-    let (landscape, timeout_ms) = body
-        .map(|b| (b.0.landscape.unwrap_or(false), b.0.timeout_ms))
-        .unwrap_or((false, None));
-    let obs = crate::actions::capture::export_pdf(
-        &state.session_manager,
-        &session_id,
-        Some(&tab_id),
-        landscape,
-        timeout_ms,
-    )
-    .await;
-    Json(obs)
-}
-
 async fn list_downloads_handler(
     State(state): State<AppState>,
     Path(session_id): Path<String>,
@@ -1173,18 +1107,6 @@ mod tests {
         assert!(!obs.success);
         let err = obs.error.as_ref().unwrap();
         assert_eq!(err.code, "JS_EVAL_DISABLED");
-    }
-
-    #[tokio::test]
-    async fn test_screenshot_nonexistent_session() {
-        let state = test_state();
-        let Json(obs) = screenshot_handler(
-            State(state),
-            Path(("nonexistent".into(), "tab1".into())),
-            None,
-        )
-        .await;
-        assert!(!obs.success);
     }
 
     #[tokio::test]
