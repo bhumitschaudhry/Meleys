@@ -1,95 +1,69 @@
 # Meleys — Agent-First Browser Runtime
 
-Meleys is a lightweight, local browser runtime written in Rust that provides LLM-driven agents (and other calling programs) with direct, programmable hands on a real, persistent, headless Chromium browser. 
+Meleys is a lightweight local browser runtime in Rust that gives LLM agents control over a persistent, headless Chromium browser. 
 
-By exposing a minimal set of **mechanical primitives** (navigation, clicking, typing, scrolling) and returning highly structured, optimized **observations** (Accessibility trees, simplified DOM snapshots, search engine results), Meleys allows LLMs to interact with the dynamic web without complex dependencies.
+It exposes core primitives (navigation, click, type, scroll) and returns structured observations (accessibility trees, DOM snapshots, search results) without complex external dependencies.
 
 > [!IMPORTANT]
-> **The runtime performs zero reasoning.** It does not decide what to click, does not summarize content, and does not plan tasks. All intelligence lives in the calling agent; Meleys is a deterministic execution boundary.
+> **Meleys performs zero reasoning.** It is a deterministic execution boundary. All planning and decision-making live in the calling agent.
 
 ---
 
-## 📚 Documentation Catalog
+## 📚 Documentation
 
-For detailed setup, configuration, and developer references, see the following guides:
-
-- **[Installation & Setup Guide](docs/setup.md)**: System prerequisites, compilation instructions, quick-start guide, and running modes.
-- **[Configuration Guide](docs/configuration.md)**: Detailed configuration option lists for `config.toml` and environment variable overrides.
-- **[HTTP REST API Reference](docs/api.md)**: Comprehensive endpoints map, JSON payloads request schemas, observation return properties, and error codes.
-- **[Model Context Protocol (MCP) Reference](docs/mcp.md)**: Stdio JSON-RPC protocol guidelines, schema declarations, and client configurations (e.g. Claude Desktop).
-- **[Architecture & Internal Design](docs/architecture.md)**: Structural layout, multi-session process isolation, thread safety, and DOM/AX tree simplifications.
+- **[Installation & Setup](docs/setup.md)**: System prerequisites, compilation, and setup.
+- **[Configuration](docs/configuration.md)**: Options for `config.toml` and environment overrides.
+- **[HTTP REST API Reference](docs/api.md)**: API endpoints, request schemas, and error codes.
+- **[MCP Reference](docs/mcp.md)**: JSON-RPC stdio protocol details and client config (e.g., Claude Desktop).
+- **[Architecture & Design](docs/architecture.md)**: Process isolation, thread safety, and internal modules.
 
 ---
 
 ## ⚡ Quick Start
 
-### 1. Compile Meleys
-Ensure you have [Rust](https://rustup.rs/) installed, then run:
+### 1. Build
 ```bash
 cargo build --release
 ```
 
-### 2. Start the Runtime
-* **HTTP API Mode (default)**:
+### 2. Run
+* **HTTP API Mode** (port `8787`):
   ```bash
   ./target/release/meleys
-  # Server listening on http://127.0.0.1:8787
   ```
-* **Model Context Protocol (MCP) stdio Mode**:
+* **MCP Stdio Mode**:
   ```bash
   ./target/release/meleys --mcp
   ```
 
-### Install & agent integration (Windows)
-
-Build the MSI installer, which installs Meleys to `Program Files`, adds it to `PATH`,
-and registers it as the browser backend for Claude Code, Cline, Cursor, and VS Code /
-Copilot (so those agents route web search through Meleys instead of their built-in
-tools):
-
-```bash
-cargo build --release
+### 3. Agent Integration (Windows)
+To automatically register Meleys as a browser backend for Claude Code, Cline, Cursor, and VS Code:
+```powershell
 powershell -ExecutionPolicy Bypass -File wix/build.ps1
 ```
+*(Or run `meleys setup install` manually. See [Setup](docs/setup.md).)*
 
-You can also register/unregister the agent integration manually with
-`meleys setup install|uninstall|list` (see `docs/setup.md`).
-
-### 3. Basic Test
-In HTTP mode, verify the server is running by querying the health check:
+### 4. Test
 ```bash
-curl -i http://localhost:8787/v1/health
+curl http://localhost:8787/v1/health
 ```
 
 ---
 
-## 🛠️ Selector Types Reference
+## 🛠️ Selector Types
 
-Meleys uses structured selectors so the calling agent can target elements explicitly:
+Target elements explicitly using structured selectors:
 
-```json
-// CSS selector
-{"type": "Css", "value": "#search-input"}
-
-// XPath selector
-{"type": "XPath", "value": "//button[text()='Submit']"}
-
-// Accessibility Tree Node ID
-{"type": "AxNodeId", "value": "ax-node-5"}
-
-// Backend DOM Node ID
-{"type": "BackendNodeId", "value": 104}
-
-// Screen Text Match
-{"type": "Text", "value": {"exact": true, "value": "Sign In"}}
-
-// Bounding Box Coordinates
-{"type": "Coordinates", "value": {"x": 200.5, "y": 450.0}}
-```
+- **CSS**: `{"type": "Css", "value": "#search-input"}`
+- **XPath**: `{"type": "XPath", "value": "//button[text()='Submit']"}`
+- **Accessibility Tree**: `{"type": "AxNodeId", "value": "ax-node-5"}`
+- **DOM Node ID**: `{"type": "BackendNodeId", "value": 104}`
+- **Text Match**: `{"type": "Text", "value": {"exact": true, "value": "Sign In"}}`
+- **Coordinates**: `{"type": "Coordinates", "value": {"x": 200.5, "y": 450.0}}`
 
 ---
 
-## 🏛️ Architecture Overview
+## 🏛️ Architecture
 
 ```
 +--------------------------------------------------------+
@@ -128,15 +102,15 @@ Meleys uses structured selectors so the calling agent can target elements explic
 
 ---
 
-## 🔒 Security Summary
+## 🔒 Security
 
-- **Local-Only**: Bindings default to `127.0.0.1` to prevent unauthorized remote control.
-- **No Arbitrary JS Execution**: `evaluate_js` is disabled by default for security. It can be enabled via `limits.allow_evaluate_js = true`.
-- **Containment**: File downloads are written to the session's isolated downloads folder. Path traversal is blocked.
-- **Stealth and Safety**: Meleys does not perform content filtering or stealth spoofing. The calling agent is responsible for browsing safety and operator consent.
+- **Local-Only**: Binds to `127.0.0.1` by default.
+- **No JS Execution**: `evaluate_js` is disabled unless `limits.allow_evaluate_js = true` is set.
+- **Containment**: Downloads are restricted to the session's folder; path traversal is blocked.
+- **Stealth & Safety**: No built-in spoofing or filtering. Calling agents must manage browsing safety.
 
 ---
 
 ## 📄 License
 
-Meleys is licensed under the Apache 2.0 License. See the `LICENSE` file for details.
+Apache 2.0. See [LICENSE](LICENSE) for details.
