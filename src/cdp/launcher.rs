@@ -184,3 +184,61 @@ pub fn find_browser_binary() -> Option<String> {
     }
     None
 }
+
+/// Find the Lightpanda binary on the system.
+pub fn find_lightpanda_binary(config_path: &str) -> Option<String> {
+    // 1. Check config path
+    if !config_path.is_empty() && std::path::Path::new(config_path).exists() {
+        return Some(config_path.to_string());
+    }
+    // 2. Check PATH (use "where" on Windows, "which" on Unix)
+    let which_cmd = if cfg!(windows) { "where" } else { "which" };
+    if let Ok(output) = std::process::Command::new(which_cmd)
+        .arg("lightpanda")
+        .output()
+    {
+        if output.status.success() {
+            let path = String::from_utf8_lossy(&output.stdout).trim().to_string();
+            if !path.is_empty() {
+                return Some(path);
+            }
+        }
+    }
+    // 3. Common install dirs
+    let mut candidates = vec![
+        "/usr/local/bin/lightpanda".to_string(),
+        "/opt/homebrew/bin/lightpanda".to_string(),
+    ];
+    if let Some(home) = dirs::home_dir() {
+        candidates.push(home.join(".local/bin/lightpanda").to_string_lossy().into_owned());
+    }
+    for candidate in &candidates {
+        if std::path::Path::new(candidate).exists() {
+            return Some(candidate.clone());
+        }
+    }
+    None
+}
+
+/// Spawn a Lightpanda subprocess.
+pub fn spawn_lightpanda(
+    config: &crate::config::LightpandaConfig,
+) -> Result<std::process::Child, crate::error::MeleyError> {
+    let binary = find_lightpanda_binary(&config.binary_path).ok_or_else(|| {
+        crate::error::MeleyError::EngineStartupFailed("Lightpanda binary not found".into())
+    })?;
+    let mut cmd = std::process::Command::new(&binary);
+    cmd.arg("serve")
+        .arg("--host")
+        .arg("127.0.0.1")
+        .arg("--port")
+        .arg(config.port.to_string())
+        .env("LIGHTPANDA_DISABLE_TELEMETRY", "true");
+    if config.obey_robots {
+        cmd.arg("--obey-robots");
+    }
+    let child = cmd.spawn().map_err(|e| {
+        crate::error::MeleyError::EngineStartupFailed(format!("Failed to spawn Lightpanda: {}", e))
+    })?;
+    Ok(child)
+}
