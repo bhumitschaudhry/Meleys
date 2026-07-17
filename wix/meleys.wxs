@@ -1,0 +1,141 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Meleys Windows Installer (WiX v3).
+
+  Build (from a machine with the WiX toolset on PATH):
+      candle.exe meleys.wxs -out meleys.wixobj
+      light.exe meleys.wixobj -out meleys.msi
+
+  Or use the helper:
+      powershell -ExecutionPolicy Bypass -File build.ps1
+
+  What it does:
+    1. Installs meleys.exe (+ a default config.toml) to
+       C:\Program Files\Meleys and adds that dir to the system PATH.
+    2. Adds a Start Menu shortcut.
+    3. After install, runs `meleys.exe setup install` to register Meleys as the
+       browser backend for Claude Code, Cline, Cursor, and VS Code/Copilot.
+    4. On uninstall, runs `meleys.exe setup uninstall` first (best effort) so the
+       agent configs are cleaned up before the binary is removed.
+-->
+<Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
+  <Product
+    Id="*"
+    Name="Meleys Browser Runtime"
+    Language="1033"
+    Version="$(var.ProductVersion)"
+    Manufacturer="Meleys"
+    UpgradeCode="8F3C2A1B-6D4E-4F2A-9B1C-7E5A9D3C2F10">
+
+    <Package
+      Id="*"
+      InstallerVersion="500"
+      Compressed="yes"
+      InstallScope="perMachine"
+      Platform="x64" />
+
+    <MajorUpgrade
+      DowngradeErrorMessage="A newer version of Meleys is already installed." />
+
+    <MediaTemplate EmbedCab="yes" />
+
+    <!-- Resolve the built binary location from the environment. -->
+    <Property Id="MELEYS_BIN_DIR">
+      <DirectorySearch Id="SearchMeleysBin" Path="[SourceDir]release" />
+    </Property>
+
+    <!-- ===================== Directory tree ===================== -->
+    <Directory Id="TARGETDIR" Name="SourceDir">
+      <Directory Id="ProgramFiles64Folder">
+        <Directory Id="INSTALLFOLDER" Name="Meleys" />
+      </Directory>
+
+      <Directory Id="ProgramMenuFolder">
+        <Directory Id="ApplicationProgramsFolder" Name="Meleys" />
+      </Directory>
+    </Directory>
+
+    <!-- ===================== Components ===================== -->
+    <DirectoryRef Id="INSTALLFOLDER">
+      <Component Id="MeleysExecutable" Guid="A1B2C3D4-0001-4000-8000-000000000001">
+        <File
+          Id="MeleysExe"
+          Source="$(var.BinDir)\meleys.exe"
+          KeyPath="yes"
+          Checksum="yes" />
+      </Component>
+
+      <Component Id="MeleysConfig" Guid="A1B2C3D4-0002-4000-8000-000000000002">
+        <File
+          Id="MeleysConfigFile"
+          Source="$(var.WixDir)\config.toml"
+          KeyPath="yes" />
+      </Component>
+
+      <!-- Add install dir to the system PATH (machine-wide). -->
+      <Component Id="MeleysPath" Guid="A1B2C3D4-0003-4000-8000-000000000003">
+        <Environment
+          Id="MeleysPathEnv"
+          Name="PATH"
+          Value="[INSTALLFOLDER]"
+          Permanent="no"
+          Part="last"
+          Action="set"
+          System="yes" />
+      </Component>
+    </DirectoryRef>
+
+    <DirectoryRef Id="ApplicationProgramsFolder">
+      <Component Id="MeleysStartMenuShortcut" Guid="A1B2C3D4-0004-4000-8000-000000000004">
+        <Shortcut
+          Id="MeleysShortcut"
+          Name="Meleys Browser Runtime"
+          Description="Agent-first headless browser runtime"
+          Target="[INSTALLFOLDER]meleys.exe"
+          WorkingDirectory="INSTALLFOLDER" />
+        <RemoveFolder Id="CleanupAppMenu" Directory="ApplicationProgramsFolder" On="uninstall" />
+        <RegistryValue
+          Root="HKCU"
+          Key="Software\Meleys"
+          Name="StartMenuShortcut"
+          Type="integer"
+          Value="1"
+          KeyPath="yes" />
+      </Component>
+    </DirectoryRef>
+
+    <!-- ===================== Post-install agent registration ===================== -->
+    <!-- Deferred CustomAction so it runs with elevated/impersonated context after
+         files are on disk. It invokes the freshly installed binary's setup command. -->
+    <CustomAction
+      Id="RegisterAgents"
+      Directory="INSTALLFOLDER"
+      ExeCommand="&quot;[INSTALLFOLDER]meleys.exe&quot; setup install"
+      Execute="deferred"
+      Impersonate="no"
+      Return="ignore" />
+
+    <CustomAction
+      Id="UnregisterAgents"
+      Directory="INSTALLFOLDER"
+      ExeCommand="&quot;[INSTALLFOLDER]meleys.exe&quot; setup uninstall"
+      Execute="deferred"
+      Impersonate="no"
+      Return="ignore" />
+
+    <InstallExecuteSequence>
+      <!-- Register after files are installed and PATH is set. -->
+      <Custom Action="RegisterAgents" After="InstallFinalize">NOT REMOVE</Custom>
+      <!-- Unregister before we rip the binary out. -->
+      <Custom Action="UnregisterAgents" Before="RemoveFiles">(REMOVE = "ALL")</Custom>
+    </InstallExecuteSequence>
+
+    <!-- ===================== Feature ===================== -->
+    <Feature Id="MeleysFeature" Title="Meleys Browser Runtime" Level="1">
+      <ComponentRef Id="MeleysExecutable" />
+      <ComponentRef Id="MeleysConfig" />
+      <ComponentRef Id="MeleysPath" />
+      <ComponentRef Id="MeleysStartMenuShortcut" />
+    </Feature>
+  </Product>
+</Wix>

@@ -5,4 +5,5 @@ pub mod error;
 pub mod observation;
 pub mod selector;
 pub mod session;
+pub mod setup;
 pub mod transport;

@@ -40,6 +40,21 @@ cargo build --release
   ./target/release/meleys --mcp
   ```
 
+### Install & agent integration (Windows)
+
+Build the MSI installer, which installs Meleys to `Program Files`, adds it to `PATH`,
+and registers it as the browser backend for Claude Code, Cline, Cursor, and VS Code /
+Copilot (so those agents route web search through Meleys instead of their built-in
+tools):
+
+```bash
+cargo build --release
+powershell -ExecutionPolicy Bypass -File wix/build.ps1
+```
+
+You can also register/unregister the agent integration manually with
+`meleys setup install|uninstall|list` (see `docs/setup.md`).
+
 ### 3. Basic Test
 In HTTP mode, verify the server is running by querying the health check:
 ```bash

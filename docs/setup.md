@@ -162,3 +162,58 @@ Response:
 ```bash
 curl -s -X POST http://localhost:8787/v1/sessions/quick-start/close
 ```
+
+---
+
+## Installer & Agent Integration (Windows)
+
+Meleys ships a WiX MSI installer (`wix/meleys.wxs`) that installs `meleys.exe` to
+`C:\Program Files\Meleys`, adds it to the system `PATH`, and creates a Start Menu
+shortcut.
+
+### Building the installer
+
+```bash
+# 1. Produce the release binary
+cargo build --release
+
+# 2. Build the .msi (requires the WiX toolset: winget install WiX.WiXToolset)
+powershell -ExecutionPolicy Bypass -File wix/build.ps1
+```
+
+This produces `wix/meleys.msi`.
+
+### What the installer does to coding agents
+
+After installation, the MSI runs `meleys setup install`, which registers Meleys as a
+**stdio MCP server** in the config files of these coding agents:
+
+| Agent | Config file written |
+|-------|---------------------|
+| Claude Code | `%USERPROFILE%\.claude.json` (under `mcpServers`) + `%USERPROFILE%\.claude\settings.json` (`permissions.deny: ["WebSearch","WebFetch"]`) |
+| Cline | `%USERPROFILE%\.cline\mcp.json` |
+| Cursor | `%USERPROFILE%\.cursor\mcp.json` |
+| VS Code / GitHub Copilot | `%APPDATA%\Code\User\settings.json` (under `mcp.servers`) |
+
+Because Claude Code's built-in `WebSearch`/`WebFetch` tools are denied, the agent
+routes web access through Meleys (the local headless Chromium runtime) whenever it
+needs to search the web. All edits are marked `_meleys_managed` and are idempotent.
+
+### Managing agent integration manually
+
+The same `meleys setup` command can be run any time (it does not require the MSI):
+
+```bash
+# Register for all agents (or a subset)
+meleys setup install [--agents claude,cline,cursor,vscode] [--no-disable-builtin]
+
+# Show current registration status
+meleys setup list
+
+# Remove Meleys from agent configs (only the keys Meleys added)
+meleys setup uninstall [--agents claude,cline,cursor,vscode]
+```
+
+> Note: `meleys setup` resolves the absolute path of the running executable, so it
+> works whether Meleys was installed via the MSI or built from source. Run it after
+> (re)installing Meleys so agents point at the current binary.

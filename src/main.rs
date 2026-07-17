@@ -33,8 +33,14 @@ async fn main() -> Result<()> {
     let downloads: DownloadRegistry = Arc::new(Mutex::new(Default::default()));
     let allow_js = config.limits.allow_evaluate_js;
 
-    // Check MCP transport mode (if --mcp flag is passed)
+    // Parse top-level command. Supported invocations:
+    //   meleys                -> HTTP mode (default)
+    //   meleys --mcp          -> MCP stdio mode
+    //   meleys setup ...      -> agent config registration (installer hook)
     let args: Vec<String> = std::env::args().collect();
+    if args.get(1).map(|a| a.as_str()) == Some("setup") {
+        return meleys::setup::run(&args[2..]);
+    }
     if args.iter().any(|a| a == "--mcp") {
         tracing::info!("Starting MCP stdio transport");
         let session_manager_clone = session_manager.clone();

@@ -1,0 +1,23 @@
+[server]
+http_port = 8787
+http_bind = "127.0.0.1"
+mcp_transport = "stdio"
+
+[browser]
+executable_path = ""
+headless = true
+default_viewport = { width = 1280, height = 800 }
+profile_dir = ""
+
+[search]
+default_engine = "duckduckgo"
+
+[limits]
+max_sessions = 8
+default_action_timeout_ms = 30000
+max_dom_nodes_per_call = 2000
+allow_evaluate_js = false
+
+[downloads]
+dir = ""
+allowed_save_dirs = []
