@@ -501,3 +501,651 @@ fn error_code(e: &anyhow::Error) -> (&'static str, bool) {
         ("INTERNAL_ERROR", false)
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::collections::HashMap;
+
+    // ── URL encoding tests ────────────────────────────────────────
+
+    #[test]
+    fn test_urlencoding_ascii_letters() {
+        assert_eq!(urlencoding("hello"), "hello");
+    }
+
+    #[test]
+    fn test_urlencoding_digits() {
+        assert_eq!(urlencoding("123"), "123");
+    }
+
+    #[test]
+    fn test_urlencoding_unreserved_chars() {
+        assert_eq!(urlencoding("-_.~"), "-_.~");
+    }
+
+    #[test]
+    fn test_urlencoding_space() {
+        assert_eq!(urlencoding("hello world"), "hello+world");
+    }
+
+    #[test]
+    fn test_urlencoding_special_chars() {
+        let encoded = urlencoding("a&b=c");
+        assert!(encoded.contains("%26"));
+        assert!(encoded.contains("%3D"));
+    }
+
+    #[test]
+    fn test_urlencoding_empty() {
+        assert_eq!(urlencoding(""), "");
+    }
+
+    #[test]
+    fn test_urlencoding_unicode() {
+        let encoded = urlencoding("café");
+        assert!(encoded.contains("%"));
+        assert!(!encoded.contains("é"));
+    }
+
+    #[test]
+    fn test_urlencoding_plus_sign() {
+        let encoded = urlencoding("a+b");
+        assert!(encoded.contains("%2B"));
+    }
+
+    #[test]
+    fn test_urlencoding_slash() {
+        let encoded = urlencoding("path/to/file");
+        assert!(encoded.contains("%2F"));
+    }
+
+    #[test]
+    fn test_urlencoding_question_mark() {
+        let encoded = urlencoding("what?");
+        assert!(encoded.contains("%3F"));
+    }
+
+    #[test]
+    fn test_urlencoding_hash() {
+        let encoded = urlencoding("page#section");
+        assert!(encoded.contains("%23"));
+    }
+
+    #[test]
+    fn test_urlencoding_mixed() {
+        let encoded = urlencoding("rust async runtime");
+        assert!(encoded.contains('+'));
+        assert!(!encoded.contains(' '));
+    }
+
+    // ── DuckDuckGo adapter tests ──────────────────────────────────
+
+    #[test]
+    fn test_ddg_adapter_name() {
+        let adapter = DuckDuckGoAdapter;
+        assert_eq!(adapter.name(), "duckduckgo");
+    }
+
+    #[test]
+    fn test_ddg_search_url() {
+        let adapter = DuckDuckGoAdapter;
+        let url = adapter.search_url("rust lang");
+        assert!(url.starts_with("https://html.duckduckgo.com/html/?q="));
+        assert!(url.contains("rust"));
+        assert!(url.contains("lang"));
+    }
+
+    #[test]
+    fn test_ddg_results_ready_selector() {
+        let adapter = DuckDuckGoAdapter;
+        let sel = adapter.results_ready_selector();
+        assert!(!sel.is_empty());
+        assert!(sel.contains(".result"));
+    }
+
+    #[test]
+    fn test_ddg_extract_single_result() {
+        let adapter = DuckDuckGoAdapter;
+        let dom = SimplifiedNode {
+            backend_node_id: 0,
+            tag: "div".into(),
+            attributes: HashMap::new(),
+            text: None,
+            visible: true,
+            bounding_box: None,
+            children: vec![SimplifiedNode {
+                backend_node_id: 1,
+                tag: "div".into(),
+                attributes: {
+                    let mut m = HashMap::new();
+                    m.insert("class".into(), "result".into());
+                    m
+                },
+                text: None,
+                visible: true,
+                bounding_box: None,
+                children: vec![
+                    SimplifiedNode {
+                        backend_node_id: 2,
+                        tag: "a".into(),
+                        attributes: {
+                            let mut m = HashMap::new();
+                            m.insert("class".into(), "result__a".into());
+                            m.insert("href".into(), "https://example.com".into());
+                            m
+                        },
+                        text: Some("Example Site".into()),
+                        visible: true,
+                        bounding_box: None,
+                        children: vec![],
+                    },
+                    SimplifiedNode {
+                        backend_node_id: 3,
+                        tag: "td".into(),
+                        attributes: {
+                            let mut m = HashMap::new();
+                            m.insert("class".into(), "result__snippet".into());
+                            m
+                        },
+                        text: Some("An example snippet".into()),
+                        visible: true,
+                        bounding_box: None,
+                        children: vec![],
+                    },
+                ],
+            }],
+        };
+
+        let results = adapter.extract(&dom);
+        assert_eq!(results.len(), 1);
+        assert_eq!(results[0].title, "Example Site");
+        assert_eq!(results[0].url, "https://example.com");
+        assert_eq!(results[0].snippet.as_deref(), Some("An example snippet"));
+        assert_eq!(results[0].rank, 1);
+    }
+
+    #[test]
+    fn test_ddg_extract_no_results() {
+        let adapter = DuckDuckGoAdapter;
+        let dom = SimplifiedNode {
+            backend_node_id: 0,
+            tag: "div".into(),
+            attributes: HashMap::new(),
+            text: Some("No results".into()),
+            visible: true,
+            bounding_box: None,
+            children: vec![],
+        };
+        let results = adapter.extract(&dom);
+        assert!(results.is_empty());
+    }
+
+    #[test]
+    fn test_ddg_extract_multiple_results() {
+        let adapter = DuckDuckGoAdapter;
+        let make_result = |id: i64, title: &str, url: &str, snippet: &str| -> SimplifiedNode {
+            SimplifiedNode {
+                backend_node_id: id,
+                tag: "div".into(),
+                attributes: {
+                    let mut m = HashMap::new();
+                    m.insert("class".into(), "result".into());
+                    m
+                },
+                text: None,
+                visible: true,
+                bounding_box: None,
+                children: vec![
+                    SimplifiedNode {
+                        backend_node_id: id + 1,
+                        tag: "a".into(),
+                        attributes: {
+                            let mut m = HashMap::new();
+                            m.insert("class".into(), "result__a".into());
+                            m.insert("href".into(), url.into());
+                            m
+                        },
+                        text: Some(title.into()),
+                        visible: true,
+                        bounding_box: None,
+                        children: vec![],
+                    },
+                    SimplifiedNode {
+                        backend_node_id: id + 2,
+                        tag: "td".into(),
+                        attributes: {
+                            let mut m = HashMap::new();
+                            m.insert("class".into(), "result__snippet".into());
+                            m
+                        },
+                        text: Some(snippet.into()),
+                        visible: true,
+                        bounding_box: None,
+                        children: vec![],
+                    },
+                ],
+            }
+        };
+
+        let dom = SimplifiedNode {
+            backend_node_id: 0,
+            tag: "div".into(),
+            attributes: HashMap::new(),
+            text: None,
+            visible: true,
+            bounding_box: None,
+            children: vec![
+                make_result(1, "First", "https://first.com", "First snippet"),
+                make_result(10, "Second", "https://second.com", "Second snippet"),
+                make_result(20, "Third", "https://third.com", "Third snippet"),
+            ],
+        };
+
+        let results = adapter.extract(&dom);
+        assert_eq!(results.len(), 3);
+        assert_eq!(results[0].rank, 1);
+        assert_eq!(results[1].rank, 2);
+        assert_eq!(results[2].rank, 3);
+        assert_eq!(results[0].title, "First");
+        assert_eq!(results[1].url, "https://second.com");
+        assert_eq!(results[2].snippet.as_deref(), Some("Third snippet"));
+    }
+
+    #[test]
+    fn test_ddg_extract_skips_empty_title_or_url() {
+        let adapter = DuckDuckGoAdapter;
+        let dom = SimplifiedNode {
+            backend_node_id: 0,
+            tag: "div".into(),
+            attributes: HashMap::new(),
+            text: None,
+            visible: true,
+            bounding_box: None,
+            children: vec![SimplifiedNode {
+                backend_node_id: 1,
+                tag: "div".into(),
+                attributes: {
+                    let mut m = HashMap::new();
+                    m.insert("class".into(), "result".into());
+                    m
+                },
+                text: None,
+                visible: true,
+                bounding_box: None,
+                children: vec![SimplifiedNode {
+                    backend_node_id: 2,
+                    tag: "a".into(),
+                    attributes: {
+                        let mut m = HashMap::new();
+                        m.insert("class".into(), "result__a".into());
+                        // No href = empty URL
+                        m
+                    },
+                    text: Some("Title".into()),
+                    visible: true,
+                    bounding_box: None,
+                    children: vec![],
+                }],
+            }],
+        };
+        let results = adapter.extract(&dom);
+        // Should skip because URL is empty
+        assert!(results.is_empty());
+    }
+
+    // ── Bing adapter tests ────────────────────────────────────────
+
+    #[test]
+    fn test_bing_adapter_name() {
+        let adapter = BingAdapter;
+        assert_eq!(adapter.name(), "bing");
+    }
+
+    #[test]
+    fn test_bing_search_url() {
+        let adapter = BingAdapter;
+        let url = adapter.search_url("rust programming");
+        assert!(url.starts_with("https://www.bing.com/search?q="));
+        assert!(url.contains("rust"));
+    }
+
+    #[test]
+    fn test_bing_results_ready_selector() {
+        let adapter = BingAdapter;
+        let sel = adapter.results_ready_selector();
+        assert!(sel.contains("#b_results"));
+        assert!(sel.contains(".b_algo"));
+    }
+
+    #[test]
+    fn test_bing_extract_single_result() {
+        let adapter = BingAdapter;
+        let dom = SimplifiedNode {
+            backend_node_id: 0,
+            tag: "ol".into(),
+            attributes: {
+                let mut m = HashMap::new();
+                m.insert("id".into(), "b_results".into());
+                m
+            },
+            text: None,
+            visible: true,
+            bounding_box: None,
+            children: vec![SimplifiedNode {
+                backend_node_id: 1,
+                tag: "li".into(),
+                attributes: {
+                    let mut m = HashMap::new();
+                    m.insert("class".into(), "b_algo".into());
+                    m
+                },
+                text: None,
+                visible: true,
+                bounding_box: None,
+                children: vec![
+                    SimplifiedNode {
+                        backend_node_id: 2,
+                        tag: "h2".into(),
+                        attributes: HashMap::new(),
+                        text: None,
+                        visible: true,
+                        bounding_box: None,
+                        children: vec![SimplifiedNode {
+                            backend_node_id: 3,
+                            tag: "a".into(),
+                            attributes: {
+                                let mut m = HashMap::new();
+                                m.insert("href".into(), "https://rust-lang.org".into());
+                                m
+                            },
+                            text: Some("Rust Language".into()),
+                            visible: true,
+                            bounding_box: None,
+                            children: vec![],
+                        }],
+                    },
+                    SimplifiedNode {
+                        backend_node_id: 4,
+                        tag: "div".into(),
+                        attributes: {
+                            let mut m = HashMap::new();
+                            m.insert("class".into(), "b_caption".into());
+                            m
+                        },
+                        text: Some("Systems programming language".into()),
+                        visible: true,
+                        bounding_box: None,
+                        children: vec![],
+                    },
+                ],
+            }],
+        };
+
+        let results = adapter.extract(&dom);
+        assert_eq!(results.len(), 1);
+        assert_eq!(results[0].title, "Rust Language");
+        assert_eq!(results[0].url, "https://rust-lang.org");
+        assert_eq!(results[0].snippet.as_deref(), Some("Systems programming language"));
+    }
+
+    #[test]
+    fn test_bing_extract_no_results() {
+        let adapter = BingAdapter;
+        let dom = SimplifiedNode {
+            backend_node_id: 0,
+            tag: "div".into(),
+            attributes: HashMap::new(),
+            text: Some("No results".into()),
+            visible: true,
+            bounding_box: None,
+            children: vec![],
+        };
+        let results = adapter.extract(&dom);
+        assert!(results.is_empty());
+    }
+
+    // ── Google adapter tests ──────────────────────────────────────
+
+    #[test]
+    fn test_google_adapter_name() {
+        let adapter = GoogleAdapter;
+        assert_eq!(adapter.name(), "google");
+    }
+
+    #[test]
+    fn test_google_search_url() {
+        let adapter = GoogleAdapter;
+        let url = adapter.search_url("test query");
+        assert!(url.starts_with("https://www.google.com/search?q="));
+        assert!(url.contains("test"));
+    }
+
+    #[test]
+    fn test_google_results_ready_selector() {
+        let adapter = GoogleAdapter;
+        let sel = adapter.results_ready_selector();
+        assert!(sel.contains("#search"));
+        assert!(sel.contains(".g"));
+    }
+
+    #[test]
+    fn test_google_extract_single_result() {
+        let adapter = GoogleAdapter;
+        let dom = SimplifiedNode {
+            backend_node_id: 0,
+            tag: "div".into(),
+            attributes: {
+                let mut m = HashMap::new();
+                m.insert("id".into(), "rso".into());
+                m
+            },
+            text: None,
+            visible: true,
+            bounding_box: None,
+            children: vec![SimplifiedNode {
+                backend_node_id: 1,
+                tag: "div".into(),
+                attributes: {
+                    let mut m = HashMap::new();
+                    m.insert("class".into(), "g".into());
+                    m
+                },
+                text: None,
+                visible: true,
+                bounding_box: None,
+                children: vec![
+                    SimplifiedNode {
+                        backend_node_id: 2,
+                        tag: "div".into(),
+                        attributes: HashMap::new(),
+                        text: None,
+                        visible: true,
+                        bounding_box: None,
+                        children: vec![
+                            SimplifiedNode {
+                                backend_node_id: 3,
+                                tag: "a".into(),
+                                attributes: {
+                                    let mut m = HashMap::new();
+                                    m.insert("href".into(), "https://crates.io".into());
+                                    m
+                                },
+                                text: None,
+                                visible: true,
+                                bounding_box: None,
+                                children: vec![SimplifiedNode {
+                                    backend_node_id: 4,
+                                    tag: "h3".into(),
+                                    attributes: HashMap::new(),
+                                    text: Some("crates.io".into()),
+                                    visible: true,
+                                    bounding_box: None,
+                                    children: vec![],
+                                }],
+                            },
+                            SimplifiedNode {
+                                backend_node_id: 5,
+                                tag: "div".into(),
+                                attributes: {
+                                    let mut m = HashMap::new();
+                                    m.insert("class".into(), "VwiC3b".into());
+                                    m
+                                },
+                                text: Some("The Rust community's crate registry".into()),
+                                visible: true,
+                                bounding_box: None,
+                                children: vec![],
+                            },
+                        ],
+                    },
+                ],
+            }],
+        };
+
+        let results = adapter.extract(&dom);
+        assert_eq!(results.len(), 1);
+        assert_eq!(results[0].title, "crates.io");
+        assert_eq!(results[0].url, "https://crates.io");
+        assert!(results[0].snippet.is_some());
+    }
+
+    #[test]
+    fn test_google_extract_no_results() {
+        let adapter = GoogleAdapter;
+        let dom = SimplifiedNode {
+            backend_node_id: 0,
+            tag: "div".into(),
+            attributes: HashMap::new(),
+            text: Some("No results".into()),
+            visible: true,
+            bounding_box: None,
+            children: vec![],
+        };
+        let results = adapter.extract(&dom);
+        assert!(results.is_empty());
+    }
+
+    #[test]
+    fn test_google_extract_skips_google_urls() {
+        let adapter = GoogleAdapter;
+        let dom = SimplifiedNode {
+            backend_node_id: 0,
+            tag: "div".into(),
+            attributes: HashMap::new(),
+            text: None,
+            visible: true,
+            bounding_box: None,
+            children: vec![SimplifiedNode {
+                backend_node_id: 1,
+                tag: "div".into(),
+                attributes: {
+                    let mut m = HashMap::new();
+                    m.insert("class".into(), "g".into());
+                    m
+                },
+                text: None,
+                visible: true,
+                bounding_box: None,
+                children: vec![SimplifiedNode {
+                    backend_node_id: 2,
+                    tag: "a".into(),
+                    attributes: {
+                        let mut m = HashMap::new();
+                        m.insert("href".into(), "https://www.google.com/search?q=test".into());
+                        m
+                    },
+                    text: Some("Google Link".into()),
+                    visible: true,
+                    bounding_box: None,
+                    children: vec![SimplifiedNode {
+                        backend_node_id: 3,
+                        tag: "h3".into(),
+                        attributes: HashMap::new(),
+                        text: Some("Google Result".into()),
+                        visible: true,
+                        bounding_box: None,
+                        children: vec![],
+                    }],
+                }],
+            }],
+        };
+        let results = adapter.extract(&dom);
+        // Should be empty because the URL is a google.com URL
+        assert!(results.is_empty());
+    }
+
+    // ── SearchRegistry tests ──────────────────────────────────────
+
+    #[test]
+    fn test_registry_default_engine() {
+        let registry = SearchRegistry::new("bing");
+        assert_eq!(registry.default_name(), "bing");
+    }
+
+    #[test]
+    fn test_registry_get_existing() {
+        let registry = SearchRegistry::new("duckduckgo");
+        assert!(registry.get("google").is_some());
+        assert!(registry.get("bing").is_some());
+        assert!(registry.get("duckduckgo").is_some());
+    }
+
+    #[test]
+    fn test_registry_get_nonexistent() {
+        let registry = SearchRegistry::new("duckduckgo");
+        assert!(registry.get("yahoo").is_none());
+        assert!(registry.get("").is_none());
+    }
+
+    #[test]
+    fn test_registry_default_method() {
+        let registry = SearchRegistry::new("google");
+        let adapter = registry.default();
+        assert_eq!(adapter.name(), "google");
+    }
+
+    #[test]
+    fn test_registry_default_fallback_for_unknown() {
+        let registry = SearchRegistry::new("unknown_engine");
+        let adapter = registry.default();
+        // Should fall back to first adapter (DuckDuckGo)
+        assert_eq!(adapter.name(), "duckduckgo");
+    }
+
+    #[test]
+    fn test_registry_set_default() {
+        let registry = SearchRegistry::new("duckduckgo");
+        registry.set_default("bing");
+        assert_eq!(registry.default_name(), "bing");
+        registry.set_default("google");
+        assert_eq!(registry.default_name(), "google");
+    }
+
+    #[test]
+    fn test_registry_all_adapters_present() {
+        let registry = SearchRegistry::new("duckduckgo");
+        let names: Vec<&str> = ["google", "bing", "duckduckgo"]
+            .iter()
+            .filter(|n| registry.get(n).is_some())
+            .map(|s| *s)
+            .collect();
+        assert_eq!(names.len(), 3);
+    }
+
+    #[test]
+    fn test_all_adapters_produce_valid_search_urls() {
+        let adapters: Vec<Box<dyn SearchEngineAdapter>> = vec![
+            Box::new(DuckDuckGoAdapter),
+            Box::new(BingAdapter),
+            Box::new(GoogleAdapter),
+        ];
+        for adapter in &adapters {
+            let url = adapter.search_url("test");
+            assert!(url.starts_with("https://"), "Adapter {} URL should start with https://", adapter.name());
+            assert!(url.contains("test"), "Adapter {} URL should contain query", adapter.name());
+            let ready = adapter.results_ready_selector();
+            assert!(!ready.is_empty(), "Adapter {} should have a ready selector", adapter.name());
+        }
+    }
+}

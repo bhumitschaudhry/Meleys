@@ -695,3 +695,74 @@ fn error_code(e: &anyhow::Error) -> (&'static str, bool) {
         ("INTERNAL_ERROR", false)
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_build_find_expr_css() {
+        let sel = Selector::Css("#main".into());
+        let expr = build_find_expr(&sel, 0);
+        assert!(expr.contains("document.querySelectorAll"));
+        assert!(expr.contains("#main"));
+        assert!(expr.contains("[0]"));
+    }
+
+    #[test]
+    fn test_build_find_expr_css_nth() {
+        let sel = Selector::Css(".item".into());
+        let expr = build_find_expr(&sel, 3);
+        assert!(expr.contains("[3]"));
+    }
+
+    #[test]
+    fn test_build_find_expr_xpath() {
+        let sel = Selector::XPath("//div".into());
+        let expr = build_find_expr(&sel, 0);
+        assert!(expr.contains("document.evaluate"));
+        assert!(expr.contains("//div"));
+        assert!(expr.contains("snapshotItem"));
+    }
+
+    #[test]
+    fn test_build_find_expr_text_exact() {
+        let sel = Selector::Text { exact: true, value: "Submit".into() };
+        let expr = build_find_expr(&sel, 0);
+        assert!(expr.contains("textContent.trim() ==="));
+        assert!(expr.contains("Submit"));
+    }
+
+    #[test]
+    fn test_build_find_expr_text_partial() {
+        let sel = Selector::Text { exact: false, value: "Sub".into() };
+        let expr = build_find_expr(&sel, 0);
+        assert!(expr.contains("textContent.trim().includes"));
+        assert!(expr.contains("Sub"));
+    }
+
+    #[test]
+    fn test_build_find_expr_coordinates() {
+        let sel = Selector::Coordinates { x: 50.0, y: 100.0 };
+        let expr = build_find_expr(&sel, 0);
+        assert!(expr.contains("document.elementFromPoint"));
+        assert!(expr.contains("50"));
+        assert!(expr.contains("100"));
+    }
+
+    #[test]
+    fn test_build_find_expr_ax_node_id() {
+        let sel = Selector::AxNodeId("node-42".into());
+        let expr = build_find_expr(&sel, 0);
+        assert!(expr.contains("data-ax-node-id"));
+        assert!(expr.contains("node-42"));
+    }
+
+    #[test]
+    fn test_build_find_expr_backend_node_id() {
+        let sel = Selector::BackendNodeId(99);
+        let expr = build_find_expr(&sel, 0);
+        assert!(expr.contains("null"));
+        assert!(expr.contains("BackendNodeId"));
+    }
+}

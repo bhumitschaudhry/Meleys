@@ -44,3 +44,62 @@ impl ActionDispatcher {
         Observation::failure(session_id, tab_id, action, code, err.to_string(), retryable)
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::config::Config;
+
+    #[test]
+    fn test_action_dispatcher_creation() {
+        let config = Config::default();
+        let manager = Arc::new(SessionManager::new(config));
+        let dispatcher = ActionDispatcher::new(manager);
+        assert_eq!(dispatcher.session_manager.default_search_engine(), "duckduckgo");
+    }
+
+    #[test]
+    fn test_error_obs_with_meley_error() {
+        let config = Config::default();
+        let manager = Arc::new(SessionManager::new(config));
+        let dispatcher = ActionDispatcher::new(manager);
+
+        let err = anyhow::anyhow!(MeleyError::SessionNotFound("s1".into()));
+        let obs = dispatcher.error_obs("s1", "t1", "test_action", &err);
+        assert!(!obs.success);
+        assert_eq!(obs.session_id, "s1");
+        assert_eq!(obs.tab_id, "t1");
+        assert_eq!(obs.action, "test_action");
+        let error = obs.error.as_ref().unwrap();
+        assert_eq!(error.code, "SESSION_NOT_FOUND");
+        assert!(!error.retryable);
+    }
+
+    #[test]
+    fn test_error_obs_with_timeout_error() {
+        let config = Config::default();
+        let manager = Arc::new(SessionManager::new(config));
+        let dispatcher = ActionDispatcher::new(manager);
+
+        let err = anyhow::anyhow!(MeleyError::Timeout("30s".into()));
+        let obs = dispatcher.error_obs("", "", "navigate", &err);
+        assert!(!obs.success);
+        let error = obs.error.as_ref().unwrap();
+        assert_eq!(error.code, "TIMEOUT");
+        assert!(error.retryable);
+    }
+
+    #[test]
+    fn test_error_obs_with_generic_error() {
+        let config = Config::default();
+        let manager = Arc::new(SessionManager::new(config));
+        let dispatcher = ActionDispatcher::new(manager);
+
+        let err = anyhow::anyhow!("something unexpected");
+        let obs = dispatcher.error_obs("", "", "test", &err);
+        assert!(!obs.success);
+        let error = obs.error.as_ref().unwrap();
+        assert_eq!(error.code, "INTERNAL_ERROR");
+        assert!(!error.retryable);
+    }
+}

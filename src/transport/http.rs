@@ -30,45 +30,45 @@ pub fn build_router(state: AppState) -> Router {
     Router::new()
         // Sessions
         .route("/v1/sessions", get(list_sessions_handler).post(create_session_handler))
-        .route("/v1/sessions/:session_id", post(close_session_handler_post))
-        .route("/v1/sessions/:session_id/close", post(close_session_handler))
-        .route("/v1/sessions/:session_id/tabs", get(list_tabs_handler).post(new_tab_handler))
-        .route("/v1/sessions/:session_id/tabs/:tab_id/close", post(close_tab_handler))
-        .route("/v1/sessions/:session_id/tabs/:tab_id/switch", post(switch_tab_handler))
+        .route("/v1/sessions/{session_id}", post(close_session_handler_post))
+        .route("/v1/sessions/{session_id}/close", post(close_session_handler))
+        .route("/v1/sessions/{session_id}/tabs", get(list_tabs_handler).post(new_tab_handler))
+        .route("/v1/sessions/{session_id}/tabs/{tab_id}/close", post(close_tab_handler))
+        .route("/v1/sessions/{session_id}/tabs/{tab_id}/switch", post(switch_tab_handler))
         // Navigation
-        .route("/v1/sessions/:session_id/tabs/:tab_id/navigate", post(navigate_handler))
-        .route("/v1/sessions/:session_id/tabs/:tab_id/go_back", post(go_back_handler))
-        .route("/v1/sessions/:session_id/tabs/:tab_id/go_forward", post(go_forward_handler))
-        .route("/v1/sessions/:session_id/tabs/:tab_id/reload", post(reload_handler))
-        .route("/v1/sessions/:session_id/tabs/:tab_id/wait_for", post(wait_for_handler))
+        .route("/v1/sessions/{session_id}/tabs/{tab_id}/navigate", post(navigate_handler))
+        .route("/v1/sessions/{session_id}/tabs/{tab_id}/go_back", post(go_back_handler))
+        .route("/v1/sessions/{session_id}/tabs/{tab_id}/go_forward", post(go_forward_handler))
+        .route("/v1/sessions/{session_id}/tabs/{tab_id}/reload", post(reload_handler))
+        .route("/v1/sessions/{session_id}/tabs/{tab_id}/wait_for", post(wait_for_handler))
         // Interaction
-        .route("/v1/sessions/:session_id/tabs/:tab_id/click", post(click_handler))
-        .route("/v1/sessions/:session_id/tabs/:tab_id/type_text", post(type_text_handler))
-        .route("/v1/sessions/:session_id/tabs/:tab_id/press_key", post(press_key_handler))
-        .route("/v1/sessions/:session_id/tabs/:tab_id/hover", post(hover_handler))
-        .route("/v1/sessions/:session_id/tabs/:tab_id/scroll", post(scroll_handler))
-        .route("/v1/sessions/:session_id/tabs/:tab_id/select_option", post(select_option_handler))
-        .route("/v1/sessions/:session_id/tabs/:tab_id/set_file_input", post(set_file_input_handler))
+        .route("/v1/sessions/{session_id}/tabs/{tab_id}/click", post(click_handler))
+        .route("/v1/sessions/{session_id}/tabs/{tab_id}/type_text", post(type_text_handler))
+        .route("/v1/sessions/{session_id}/tabs/{tab_id}/press_key", post(press_key_handler))
+        .route("/v1/sessions/{session_id}/tabs/{tab_id}/hover", post(hover_handler))
+        .route("/v1/sessions/{session_id}/tabs/{tab_id}/scroll", post(scroll_handler))
+        .route("/v1/sessions/{session_id}/tabs/{tab_id}/select_option", post(select_option_handler))
+        .route("/v1/sessions/{session_id}/tabs/{tab_id}/set_file_input", post(set_file_input_handler))
         // Extraction
-        .route("/v1/sessions/:session_id/tabs/:tab_id/get_text", post(get_text_handler))
-        .route("/v1/sessions/:session_id/tabs/:tab_id/get_links", post(get_links_handler))
-        .route("/v1/sessions/:session_id/tabs/:tab_id/get_dom", post(get_dom_handler))
-        .route("/v1/sessions/:session_id/tabs/:tab_id/get_ax_tree", post(get_ax_tree_handler))
-        .route("/v1/sessions/:session_id/tabs/:tab_id/query_elements", post(query_elements_handler))
-        .route("/v1/sessions/:session_id/tabs/:tab_id/evaluate_js", post(evaluate_js_handler))
+        .route("/v1/sessions/{session_id}/tabs/{tab_id}/get_text", post(get_text_handler))
+        .route("/v1/sessions/{session_id}/tabs/{tab_id}/get_links", post(get_links_handler))
+        .route("/v1/sessions/{session_id}/tabs/{tab_id}/get_dom", post(get_dom_handler))
+        .route("/v1/sessions/{session_id}/tabs/{tab_id}/get_ax_tree", post(get_ax_tree_handler))
+        .route("/v1/sessions/{session_id}/tabs/{tab_id}/query_elements", post(query_elements_handler))
+        .route("/v1/sessions/{session_id}/tabs/{tab_id}/evaluate_js", post(evaluate_js_handler))
         // Capture
-        .route("/v1/sessions/:session_id/tabs/:tab_id/screenshot", post(screenshot_handler))
-        .route("/v1/sessions/:session_id/tabs/:tab_id/export_pdf", post(export_pdf_handler))
+        .route("/v1/sessions/{session_id}/tabs/{tab_id}/screenshot", post(screenshot_handler))
+        .route("/v1/sessions/{session_id}/tabs/{tab_id}/export_pdf", post(export_pdf_handler))
         // Downloads
-        .route("/v1/sessions/:session_id/downloads", get(list_downloads_handler))
-        .route("/v1/sessions/:session_id/tabs/:tab_id/download_file", post(download_file_handler))
+        .route("/v1/sessions/{session_id}/downloads", get(list_downloads_handler))
+        .route("/v1/sessions/{session_id}/tabs/{tab_id}/download_file", post(download_file_handler))
         // Cookies
-        .route("/v1/sessions/:session_id/tabs/:tab_id/cookies", get(get_cookies_handler).post(set_cookies_handler).delete(clear_cookies_handler))
-        .route("/v1/sessions/:session_id/tabs/:tab_id/local_storage", get(get_local_storage_handler))
+        .route("/v1/sessions/{session_id}/tabs/{tab_id}/cookies", get(get_cookies_handler).post(set_cookies_handler).delete(clear_cookies_handler))
+        .route("/v1/sessions/{session_id}/tabs/{tab_id}/local_storage", get(get_local_storage_handler))
         // Search
-        .route("/v1/sessions/:session_id/tabs/:tab_id/search_web", post(search_web_handler))
+        .route("/v1/sessions/{session_id}/tabs/{tab_id}/search_web", post(search_web_handler))
         .route("/v1/search_engine", get(get_search_engine_handler).post(set_search_engine_handler))
-        .route("/v1/sessions/:session_id/search_engine", get(get_session_search_engine_handler).post(set_session_search_engine_handler))
+        .route("/v1/sessions/{session_id}/search_engine", get(get_session_search_engine_handler).post(set_session_search_engine_handler))
         // Health
         .route("/v1/health", get(health_handler))
         .layer(TraceLayer::new_for_http())
@@ -802,4 +802,238 @@ async fn set_session_search_engine_handler(
         &state.session_manager, Some(&session_id), &req.engine, &state.search_registry,
     ).await;
     Json(obs)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::config::Config;
+    use crate::observation::ActionResult;
+    use crate::session::SessionManager;
+
+    fn test_state() -> AppState {
+        let config = Config::default();
+        AppState {
+            session_manager: Arc::new(SessionManager::new(config.clone())),
+            search_registry: Arc::new(SearchRegistry::new(&config.search.default_engine)),
+            downloads: Arc::new(Mutex::new(Default::default())),
+            allow_js: false,
+        }
+    }
+
+    #[test]
+    fn test_build_router_creates_routes() {
+        let state = test_state();
+        let router = build_router(state);
+        // Verify the router was created successfully - if build_router
+        // panics or has invalid routes, this test will fail.
+        // We can't easily inspect axum routes, but creation succeeding
+        // means all route registrations are valid.
+        let _ = router;
+    }
+
+    #[tokio::test]
+    async fn test_health_handler() {
+        let response = health_handler().await;
+        let json = response.0;
+        assert_eq!(json["status"], "ok");
+    }
+
+    #[tokio::test]
+    async fn test_list_sessions_empty() {
+        let state = test_state();
+        let Json(obs) = list_sessions_handler(State(state)).await;
+        assert!(obs.success);
+        match &obs.result {
+            ActionResult::Sessions(sessions) => assert!(sessions.is_empty()),
+            _ => panic!("Expected Sessions variant"),
+        }
+    }
+
+    #[tokio::test]
+    async fn test_close_nonexistent_session() {
+        let state = test_state();
+        let Json(obs) = close_session_handler(
+            State(state),
+            Path("nonexistent-id".into()),
+        ).await;
+        assert!(!obs.success);
+        let err = obs.error.as_ref().unwrap();
+        assert_eq!(err.code, "SESSION_NOT_FOUND");
+    }
+
+    #[tokio::test]
+    async fn test_list_tabs_nonexistent_session() {
+        let state = test_state();
+        let Json(obs) = list_tabs_handler(
+            State(state),
+            Path("nonexistent-id".into()),
+        ).await;
+        assert!(!obs.success);
+    }
+
+    #[tokio::test]
+    async fn test_new_tab_nonexistent_session() {
+        let state = test_state();
+        let Json(obs) = new_tab_handler(
+            State(state),
+            Path("nonexistent-id".into()),
+            Json(NewTabRequest { url: None }),
+        ).await;
+        assert!(!obs.success);
+    }
+
+    #[tokio::test]
+    async fn test_navigate_nonexistent_session() {
+        let state = test_state();
+        let Json(obs) = navigate_handler(
+            State(state),
+            Path(("nonexistent".into(), "tab1".into())),
+            Json(NavigateRequest {
+                url: "https://example.com".into(),
+                wait_until: None,
+                timeout_ms: None,
+            }),
+        ).await;
+        assert!(!obs.success);
+    }
+
+    #[tokio::test]
+    async fn test_click_nonexistent_session() {
+        let state = test_state();
+        let Json(obs) = click_handler(
+            State(state),
+            Path(("nonexistent".into(), "tab1".into())),
+            Json(ClickRequest {
+                selector: Selector::Css("#btn".into()),
+                button: None,
+                click_count: None,
+                nth: None,
+                timeout_ms: None,
+            }),
+        ).await;
+        assert!(!obs.success);
+    }
+
+    #[tokio::test]
+    async fn test_get_text_nonexistent_session() {
+        let state = test_state();
+        let Json(obs) = get_text_handler(
+            State(state),
+            Path(("nonexistent".into(), "tab1".into())),
+            Some(Json(GetTextRequest {
+                selector: None,
+                max_chars: None,
+            })),
+        ).await;
+        assert!(!obs.success);
+    }
+
+    #[tokio::test]
+    async fn test_search_web_nonexistent_session() {
+        let state = test_state();
+        let Json(obs) = search_web_handler(
+            State(state),
+            Path(("nonexistent".into(), "tab1".into())),
+            Json(SearchWebRequest {
+                query: "test".into(),
+                engine: None,
+                num_results: None,
+                timeout_ms: None,
+            }),
+        ).await;
+        assert!(!obs.success);
+    }
+
+    #[tokio::test]
+    async fn test_get_search_engine_default() {
+        let state = test_state();
+        let Json(obs) = get_search_engine_handler(State(state)).await;
+        assert!(obs.success);
+        match &obs.result {
+            ActionResult::SearchEngine { engine, scope } => {
+                assert_eq!(engine, "duckduckgo");
+                assert_eq!(scope, "runtime");
+            }
+            _ => panic!("Expected SearchEngine variant"),
+        }
+    }
+
+    #[tokio::test]
+    async fn test_set_search_engine() {
+        let state = test_state();
+        let Json(obs) = set_search_engine_handler(
+            State(state.clone()),
+            Json(SetSearchEngineRequest { engine: "google".into() }),
+        ).await;
+        assert!(obs.success);
+
+        // Verify it changed
+        let Json(obs) = get_search_engine_handler(State(state)).await;
+        match &obs.result {
+            ActionResult::SearchEngine { engine, .. } => assert_eq!(engine, "google"),
+            _ => panic!("Expected SearchEngine"),
+        }
+    }
+
+    #[tokio::test]
+    async fn test_set_invalid_search_engine() {
+        let state = test_state();
+        let Json(obs) = set_search_engine_handler(
+            State(state),
+            Json(SetSearchEngineRequest { engine: "yahoo".into() }),
+        ).await;
+        assert!(!obs.success);
+    }
+
+    #[tokio::test]
+    async fn test_evaluate_js_disabled() {
+        let state = test_state();
+        let Json(obs) = evaluate_js_handler(
+            State(state),
+            Path(("s1".into(), "t1".into())),
+            Json(EvaluateJsRequest {
+                expression: "1+1".into(),
+            }),
+        ).await;
+        assert!(!obs.success);
+        let err = obs.error.as_ref().unwrap();
+        assert_eq!(err.code, "JS_EVAL_DISABLED");
+    }
+
+    #[tokio::test]
+    async fn test_screenshot_nonexistent_session() {
+        let state = test_state();
+        let Json(obs) = screenshot_handler(
+            State(state),
+            Path(("nonexistent".into(), "tab1".into())),
+            None,
+        ).await;
+        assert!(!obs.success);
+    }
+
+    #[tokio::test]
+    async fn test_download_file_nonexistent_session() {
+        let state = test_state();
+        let Json(obs) = download_file_handler(
+            State(state),
+            Path(("nonexistent".into(), "tab1".into())),
+            Json(DownloadFileRequest {
+                url: "https://example.com/file.zip".into(),
+                save_as: None,
+                timeout_ms: None,
+            }),
+        ).await;
+        assert!(!obs.success);
+    }
+
+    #[tokio::test]
+    async fn test_list_downloads_empty() {
+        let state = test_state();
+        let Json(obs) = list_downloads_handler(
+            State(state),
+            Path("nonexistent".into()),
+        ).await;
+        assert!(obs.success);
+    }
 }
