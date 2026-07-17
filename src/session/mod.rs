@@ -5,7 +5,6 @@ use std::collections::HashMap;
 use std::sync::Arc;
 
 use anyhow::Result;
-use futures::StreamExt;
 use tokio::sync::RwLock;
 
 use crate::config::Config;

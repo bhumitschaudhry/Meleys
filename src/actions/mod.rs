@@ -1,9 +1,7 @@
 use std::sync::Arc;
 
-use anyhow::Result;
-
 use crate::error::MeleyError;
-use crate::observation::{ActionResult, Observation};
+use crate::observation::Observation;
 use crate::session::SessionManager;
 
 pub mod capture;

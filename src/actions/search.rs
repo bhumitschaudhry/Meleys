@@ -5,7 +5,6 @@ use anyhow::Result;
 
 use crate::error::MeleyError;
 use crate::observation::{ActionResult, Observation, SearchResultItem, SimplifiedNode};
-use crate::selector::Selector;
 use crate::session::SessionManager;
 
 /// Trait for search engine adapters.

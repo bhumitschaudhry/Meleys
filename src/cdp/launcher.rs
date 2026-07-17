@@ -74,6 +74,57 @@ pub async fn launch_browser(config: &MeleysBrowserConfig, user_data_dir: Option<
 }
 
 /// Find the Chromium/Chrome binary on the system.
+#[cfg(windows)]
+pub fn find_browser_binary() -> Option<String> {
+    let mut candidates = Vec::new();
+
+    // Standard Program Files locations
+    if let Ok(pf) = std::env::var("ProgramFiles") {
+        candidates.push(std::path::PathBuf::from(pf.clone()).join("Google/Chrome/Application/chrome.exe"));
+        candidates.push(std::path::PathBuf::from(pf).join("Microsoft/Edge/Application/msedge.exe"));
+    }
+    if let Ok(pf86) = std::env::var("ProgramFiles(x86)") {
+        candidates.push(std::path::PathBuf::from(pf86).join("Google/Chrome/Application/chrome.exe"));
+    }
+    // LocalAppData
+    if let Ok(local_appdata) = std::env::var("LOCALAPPDATA") {
+        let appdata_path = std::path::PathBuf::from(local_appdata);
+        candidates.push(appdata_path.join("Google/Chrome/Application/chrome.exe"));
+        candidates.push(appdata_path.join("Microsoft/Edge/Application/msedge.exe"));
+
+        // Playwright cache on Windows is in LocalAppData/ms-playwright
+        let playwright_dir = appdata_path.join("ms-playwright");
+        if playwright_dir.exists() {
+            if let Ok(entries) = std::fs::read_dir(playwright_dir) {
+                for entry in entries.flatten() {
+                    if let Ok(file_type) = entry.file_type() {
+                        if file_type.is_dir() {
+                            let name = entry.file_name();
+                            let name_str = name.to_string_lossy();
+                            if name_str.starts_with("chromium-") {
+                                let path = entry.path().join("chrome-win/chrome.exe");
+                                if path.exists() {
+                                    return Some(path.to_string_lossy().into_owned());
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    for candidate in candidates {
+        if candidate.exists() {
+            return Some(candidate.to_string_lossy().into_owned());
+        }
+    }
+
+    None
+}
+
+/// Find the Chromium/Chrome binary on the system.
+#[cfg(not(windows))]
 pub fn find_browser_binary() -> Option<String> {
     let candidates = [
         "/usr/bin/chromium",

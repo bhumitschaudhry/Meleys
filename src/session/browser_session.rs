@@ -6,7 +6,6 @@ use chromiumoxide::browser::Browser;
 use chromiumoxide::Page;
 use tokio::sync::Mutex;
 
-use crate::config::BrowserConfig;
 use crate::error::MeleyError;
 use crate::observation::{CookieInfo, TabInfo};
 use crate::session::profile::Profile;

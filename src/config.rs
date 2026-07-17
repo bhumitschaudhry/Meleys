@@ -17,17 +17,24 @@ pub struct Config {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ServerConfig {
+    #[serde(default = "default_http_port")]
     pub http_port: u16,
+    #[serde(default = "default_http_bind")]
     pub http_bind: String,
+    #[serde(default = "default_mcp_transport")]
     pub mcp_transport: String,
 }
+
+fn default_http_port() -> u16 { 8787 }
+fn default_http_bind() -> String { "127.0.0.1".to_string() }
+fn default_mcp_transport() -> String { "stdio".to_string() }
 
 impl Default for ServerConfig {
     fn default() -> Self {
         Self {
-            http_port: 8787,
-            http_bind: "127.0.0.1".to_string(),
-            mcp_transport: "stdio".to_string(),
+            http_port: default_http_port(),
+            http_bind: default_http_bind(),
+            mcp_transport: default_mcp_transport(),
         }
     }
 }
@@ -49,75 +56,100 @@ impl Default for ViewportConfig {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct BrowserConfig {
+    #[serde(default)]
     pub executable_path: String,
+    #[serde(default = "default_headless")]
     pub headless: bool,
+    #[serde(default)]
     pub default_viewport: ViewportConfig,
+    #[serde(default = "default_profile_dir")]
     pub profile_dir: String,
+}
+
+fn default_headless() -> bool { true }
+fn default_profile_dir() -> String {
+    dirs::data_local_dir()
+        .map(|d| d.join("meleys").join("profiles"))
+        .unwrap_or_else(|| std::path::PathBuf::from("~/.local/share/meleys/profiles"))
+        .to_string_lossy()
+        .to_string()
 }
 
 impl Default for BrowserConfig {
     fn default() -> Self {
-        let profile_dir = dirs::data_local_dir()
-            .map(|d| d.join("meleys").join("profiles"))
-            .unwrap_or_else(|| std::path::PathBuf::from("~/.local/share/meleys/profiles"))
-            .to_string_lossy()
-            .to_string();
         Self {
             executable_path: String::new(),
-            headless: true,
+            headless: default_headless(),
             default_viewport: ViewportConfig::default(),
-            profile_dir,
+            profile_dir: default_profile_dir(),
         }
     }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct SearchConfig {
+    #[serde(default = "default_search_engine")]
     pub default_engine: String,
 }
+
+fn default_search_engine() -> String { "duckduckgo".to_string() }
 
 impl Default for SearchConfig {
     fn default() -> Self {
         Self {
-            default_engine: "duckduckgo".to_string(),
+            default_engine: default_search_engine(),
         }
     }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct LimitsConfig {
+    #[serde(default = "default_max_sessions")]
     pub max_sessions: usize,
+    #[serde(default = "default_action_timeout_ms")]
     pub default_action_timeout_ms: u64,
+    #[serde(default = "default_max_dom_nodes_per_call")]
     pub max_dom_nodes_per_call: usize,
+    #[serde(default = "default_allow_evaluate_js")]
     pub allow_evaluate_js: bool,
 }
+
+fn default_max_sessions() -> usize { 8 }
+fn default_action_timeout_ms() -> u64 { 30000 }
+fn default_max_dom_nodes_per_call() -> usize { 2000 }
+fn default_allow_evaluate_js() -> bool { false }
 
 impl Default for LimitsConfig {
     fn default() -> Self {
         Self {
-            max_sessions: 8,
-            default_action_timeout_ms: 30000,
-            max_dom_nodes_per_call: 2000,
-            allow_evaluate_js: false,
+            max_sessions: default_max_sessions(),
+            default_action_timeout_ms: default_action_timeout_ms(),
+            max_dom_nodes_per_call: default_max_dom_nodes_per_call(),
+            allow_evaluate_js: default_allow_evaluate_js(),
         }
     }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct DownloadsConfig {
+    #[serde(default = "default_downloads_dir")]
     pub dir: String,
+    #[serde(default)]
     pub allowed_save_dirs: Vec<String>,
+}
+
+fn default_downloads_dir() -> String {
+    dirs::data_local_dir()
+        .map(|d| d.join("meleys").join("downloads"))
+        .unwrap_or_else(|| std::path::PathBuf::from("~/.local/share/meleys/downloads"))
+        .to_string_lossy()
+        .to_string()
 }
 
 impl Default for DownloadsConfig {
     fn default() -> Self {
-        let dir = dirs::data_local_dir()
-            .map(|d| d.join("meleys").join("downloads"))
-            .unwrap_or_else(|| std::path::PathBuf::from("~/.local/share/meleys/downloads"))
-            .to_string_lossy()
-            .to_string();
         Self {
-            dir,
+            dir: default_downloads_dir(),
             allowed_save_dirs: vec![],
         }
     }

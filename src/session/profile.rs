@@ -67,7 +67,7 @@ mod tests {
     fn test_sanitize_profile_name_special_chars() {
         let sanitized = sanitize_profile_name("my profile!@#$%");
         assert_eq!(sanitized.len(), "my profile!@#$%".len());
-        assert!(sanitized.chars().all(|c| c.is_alphanumeric() || c == '-' || c == '_'));
+        assert!(sanitized.chars().all(|c| c.is_ascii_alphanumeric() || c == '-' || c == '_'));
         assert!(sanitized.starts_with("my"));
         assert!(sanitized.contains("profile"));
     }
@@ -79,15 +79,15 @@ mod tests {
 
     #[test]
     fn test_sanitize_profile_name_unicode() {
-        // 'é' is alphanumeric in Unicode, so it's kept
-        assert_eq!(sanitize_profile_name("café"), "café");
+        // 'é' is non-ASCII, so it is replaced with '_'
+        assert_eq!(sanitize_profile_name("café"), "caf_");
     }
 
     #[test]
     fn test_sanitize_profile_name_slashes() {
         let sanitized = sanitize_profile_name("../etc/passwd");
         // '/' and '.' are replaced with '_'
-        assert!(sanitized.chars().all(|c| c.is_alphanumeric() || c == '-' || c == '_'));
+        assert!(sanitized.chars().all(|c| c.is_ascii_alphanumeric() || c == '-' || c == '_'));
         assert!(sanitized.contains("etc"));
         assert!(sanitized.contains("passwd"));
         assert!(!sanitized.contains('/'));
@@ -189,8 +189,8 @@ mod tests {
     fn test_profile_sanitizes_name_with_dots() {
         let tmp = std::env::temp_dir().join("meleys-test-profiles-dots");
         let profile = Profile::open(tmp.to_str().unwrap(), "../../etc").unwrap();
-        // Profile stores original name but path is sanitized
-        assert!(!profile.path.to_string_lossy().contains('/'));
+        assert!(!profile.name.contains('/'));
+        assert!(!profile.name.contains('.'));
         assert!(profile.path.exists());
         // Clean up
         let _ = fs::remove_dir_all(&profile.path);

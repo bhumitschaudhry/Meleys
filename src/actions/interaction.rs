@@ -15,8 +15,8 @@ pub async fn click(
     session_id: &str,
     tab_id: Option<&str>,
     selector: &Selector,
-    button: Option<&str>,
-    click_count: Option<u32>,
+    _button: Option<&str>,
+    _click_count: Option<u32>,
     nth: Option<usize>,
     timeout_ms: Option<u64>,
 ) -> Observation {
@@ -595,7 +595,7 @@ pub async fn set_file_input(
             // Use CDP DOM.setFileInputFiles via JS File API workaround
             // chromiumoxide Element doesn't have set_files, use CDP directly
             use chromiumoxide::cdp::browser_protocol::dom::{
-                GetDocumentParams, QuerySelectorParams, SetFileInputFilesParams, ResolveNodeParams,
+                GetDocumentParams, QuerySelectorParams, SetFileInputFilesParams,
             };
 
             let doc = page.execute(GetDocumentParams::default()).await
@@ -684,7 +684,7 @@ pub fn build_find_expr(selector: &Selector, nth: usize) -> String {
         }
         Selector::Coordinates { x, y } => format!("document.elementFromPoint({}, {})", x, y),
         Selector::AxNodeId(id) => format!("document.querySelector('[data-ax-node-id=\"{}\"]')", id),
-        Selector::BackendNodeId(id) => format!("null /* BackendNodeId {} requires CDP DOM.resolveNode */", id),
+        Selector::BackendNodeId(id) => format!("document.querySelector('[data-meleys-node-id=\"{}\"]')", id),
     }
 }
 
@@ -762,7 +762,7 @@ mod tests {
     fn test_build_find_expr_backend_node_id() {
         let sel = Selector::BackendNodeId(99);
         let expr = build_find_expr(&sel, 0);
-        assert!(expr.contains("null"));
-        assert!(expr.contains("BackendNodeId"));
+        assert!(expr.contains("data-meleys-node-id"));
+        assert!(expr.contains("99"));
     }
 }

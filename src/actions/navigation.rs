@@ -1,12 +1,9 @@
 use std::sync::Arc;
 
-use anyhow::Result;
-use chromiumoxide::Page;
 use tokio::time::Duration;
 
 use crate::error::MeleyError;
 use crate::observation::{ActionResult, Observation};
-use crate::selector::Selector;
 use crate::session::SessionManager;
 
 /// Navigate to a URL.
@@ -15,7 +12,7 @@ pub async fn navigate(
     session_id: &str,
     tab_id: Option<&str>,
     url: &str,
-    wait_until: Option<&str>,
+    _wait_until: Option<&str>,
     timeout_ms: Option<u64>,
 ) -> Observation {
     let timeout = Duration::from_millis(timeout_ms.unwrap_or(30000));
@@ -218,7 +215,7 @@ pub async fn wait_for(
     selector: Option<&str>,
     state: Option<&str>,
     timeout_ms: Option<u64>,
-    idle_ms: Option<u64>,
+    _idle_ms: Option<u64>,
     js_expr: Option<&str>,
     poll_ms: Option<u64>,
     sleep_ms: Option<u64>,

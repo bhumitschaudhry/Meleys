@@ -20,7 +20,9 @@ pub async fn get_simplified_dom(
         (function() {{
             function extractNode(el, depth, maxDepth, includeHidden, count, maxNodes) {{
                 if (count[0] >= maxNodes) return null;
+                var nodeId = count[0];
                 count[0]++;
+                el.setAttribute('data-meleys-node-id', nodeId);
                 
                 var style = window.getComputedStyle ? window.getComputedStyle(el) : null;
                 var visible = includeHidden || (style && style.display !== 'none' && style.visibility !== 'hidden');
@@ -62,6 +64,7 @@ pub async fn get_simplified_dom(
                 }}
                 
                 return {{
+                    node_id: nodeId,
                     tag: el.tagName.toLowerCase(),
                     attributes: attrs,
                     text: directText,
@@ -90,10 +93,11 @@ pub async fn get_simplified_dom(
         return Err(anyhow::anyhow!("Element not found: {}", selector));
     }
 
-    parse_simplified_node(&value, 0)
+    parse_simplified_node(&value)
 }
 
-fn parse_simplified_node(v: &serde_json::Value, backend_id: i64) -> anyhow::Result<SimplifiedNode> {
+fn parse_simplified_node(v: &serde_json::Value) -> anyhow::Result<SimplifiedNode> {
+    let backend_id = v["node_id"].as_i64().unwrap_or(0);
     let tag = v["tag"].as_str().unwrap_or("unknown").to_string();
     let mut attributes = HashMap::new();
     if let Some(attrs) = v["attributes"].as_object() {
@@ -119,7 +123,7 @@ fn parse_simplified_node(v: &serde_json::Value, backend_id: i64) -> anyhow::Resu
 
     let children = if let Some(arr) = v["children"].as_array() {
         arr.iter()
-            .filter_map(|c| parse_simplified_node(c, 0).ok())
+            .filter_map(|c| parse_simplified_node(c).ok())
             .collect()
     } else {
         vec![]
@@ -196,6 +200,7 @@ pub async fn query_elements(
             var limit = {};
             for (var i = 0; i < Math.min(els.length, limit); i++) {{
                 var el = els[i];
+                el.setAttribute('data-meleys-node-id', i);
                 var attrs = {{}};
                 var allowedAttrs = ['id','class','href','role','name','value','type','src','alt','placeholder'];
                 for (var j = 0; j < el.attributes.length; j++) {{

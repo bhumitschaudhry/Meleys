@@ -76,6 +76,8 @@ pub async fn get_ax_tree(
                                  (name && name.length > 0) || children.length > 0;
                 if (!meaningful && depth > 2) return null;
                 
+                el.setAttribute('data-ax-node-id', id);
+                
                 return {{
                     ax_node_id: id,
                     role: role,

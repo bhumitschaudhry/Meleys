@@ -1,4 +1,3 @@
-use std::collections::HashMap;
 use std::sync::Arc;
 
 use axum::{
@@ -6,8 +5,7 @@ use axum::{
     routing::{get, post},
     Json, Router,
 };
-use serde::{Deserialize, Serialize};
-use tokio::sync::Mutex;
+use serde::Deserialize;
 use tower_http::trace::TraceLayer;
 
 use crate::actions::download::DownloadRegistry;
@@ -807,6 +805,7 @@ async fn set_session_search_engine_handler(
 #[cfg(test)]
 mod tests {
     use super::*;
+    use tokio::sync::Mutex;
     use crate::config::Config;
     use crate::observation::ActionResult;
     use crate::session::SessionManager;
