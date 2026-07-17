@@ -78,12 +78,20 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, macos-latest, windows-latest]
+    env:
+      MELEYS_ENGINE_DEFAULT: chromium
     steps:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@stable
       - uses: Swatinem/rust-cache@v2
         with:
           key: test-${{ matrix.os }}
+      - name: Install Lightpanda (Linux only)
+        if: runner.os == 'Linux'
+        run: |
+          curl -sL https://github.com/lightpanda-io/browser/releases/latest/download/lightpanda-x86_64-linux -o /usr/local/bin/lightpanda
+          chmod +x /usr/local/bin/lightpanda
+          lightpanda --version || echo "Lightpanda installed"
       - name: Run unit tests
         run: cargo test --locked --lib --bins --verbose
       - name: Run doc tests
