@@ -1,3 +1,4 @@
+use crate::engine::EngineKind;
 use thiserror::Error;
 
 pub type Result<T> = std::result::Result<T, MeleyError>;
@@ -51,6 +52,18 @@ pub enum MeleyError {
 
     #[error("Anyhow error: {0}")]
     Anyhow(#[from] anyhow::Error),
+
+    #[error("Engine startup failed: {0}")]
+    EngineStartupFailed(String),
+
+    #[error("Engine {engine} does not support action: {action}")]
+    EngineCapabilityUnsupported {
+        engine: EngineKind,
+        action: &'static str,
+    },
+
+    #[error("Engine fallback exhausted: {0}")]
+    EngineFallbackExhausted(String),
 }
 
 impl MeleyError {
@@ -72,6 +85,9 @@ impl MeleyError {
             MeleyError::Json(_) => "INTERNAL_ERROR",
             MeleyError::Io(_) => "INTERNAL_ERROR",
             MeleyError::Anyhow(_) => "INTERNAL_ERROR",
+            MeleyError::EngineStartupFailed(_) => "ENGINE_STARTUP_FAILED",
+            MeleyError::EngineCapabilityUnsupported { .. } => "ENGINE_CAPABILITY_UNSUPPORTED",
+            MeleyError::EngineFallbackExhausted(_) => "ENGINE_FALLBACK_EXHAUSTED",
         }
     }
 
@@ -81,6 +97,7 @@ impl MeleyError {
             MeleyError::Timeout(_)
                 | MeleyError::CdpConnectionLost(_)
                 | MeleyError::NavigationFailed(_)
+                | MeleyError::EngineStartupFailed(_)
         )
     }
 }
@@ -192,6 +209,30 @@ mod tests {
     }
 
     #[test]
+    fn test_engine_startup_failed_error_code() {
+        let err = MeleyError::EngineStartupFailed("binary not found".into());
+        assert_eq!(err.error_code(), "ENGINE_STARTUP_FAILED");
+        assert!(err.is_retryable());
+    }
+
+    #[test]
+    fn test_engine_capability_unsupported_error_code() {
+        let err = MeleyError::EngineCapabilityUnsupported {
+            engine: EngineKind::Lightpanda,
+            action: "screenshot",
+        };
+        assert_eq!(err.error_code(), "ENGINE_CAPABILITY_UNSUPPORTED");
+        assert!(!err.is_retryable());
+    }
+
+    #[test]
+    fn test_engine_fallback_exhausted_error_code() {
+        let err = MeleyError::EngineFallbackExhausted("no fallback available".into());
+        assert_eq!(err.error_code(), "ENGINE_FALLBACK_EXHAUSTED");
+        assert!(!err.is_retryable());
+    }
+
+    #[test]
     fn test_all_variants_have_error_codes() {
         let variants: Vec<MeleyError> = vec![
             MeleyError::SessionNotFound("".into()),
@@ -206,6 +247,12 @@ mod tests {
             MeleyError::CdpConnectionLost("".into()),
             MeleyError::JsEvalDisabled,
             MeleyError::Internal("".into()),
+            MeleyError::EngineStartupFailed("".into()),
+            MeleyError::EngineCapabilityUnsupported {
+                engine: EngineKind::Lightpanda,
+                action: "",
+            },
+            MeleyError::EngineFallbackExhausted("".into()),
         ];
         for err in variants {
             let code = err.error_code();
