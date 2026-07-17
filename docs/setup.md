@@ -1,221 +1,94 @@
-# Meleys Installation & Setup Guide
-
-This guide covers everything you need to get the Meleys browser runtime running locally.
+# Installation & Setup Guide
 
 ## Prerequisites
 
-Before building Meleys, ensure you have the following installed on your system:
-
-1. **Rust Toolchain**: Rust stable (2021 edition) is required. You can install it via [rustup](https://rustup.rs/):
+1. **Rust Toolchain**: Rust stable (2021 edition). Install via [rustup](https://rustup.rs/):
    ```bash
    rustup default stable
    ```
-2. **Browser Engine (Chrome, Chromium, or Lightpanda)**: Meleys uses headless browser engines to perform navigation, interaction, and extraction.
-   - **Lightpanda**: Lightweight high-performance execution engine (auto-discovered on system PATH or configured via `config.toml`).
-   - **Chrome / Chromium**: Full browser compatibility.
-     - **Windows**: Google Chrome or Microsoft Edge (usually auto-detected if installed in standard locations).
-     - **macOS**: Google Chrome (installed in `/Applications/Google Chrome.app`).
-     - **Linux**: Chrome or Chromium packages (e.g. `chromium-browser` or `google-chrome-stable` via your package manager).
-   - *Note*: If installed in non-standard locations, configure paths in `config.toml` or set `MELEYS_ENGINE__LIGHTPANDA__BINARY_PATH` / `MELEYS_ENGINE__CHROMIUM__EXECUTABLE_PATH`.
+2. **Browser Engine**:
+   - **Lightpanda**: Lightweight JS engine (auto-discovered on `PATH` or configured in `config.toml`).
+   - **Chrome / Chromium**: Full browser engine (auto-detected on standard OS paths).
 
 ---
 
-## Building from Source
+## Building & Running
 
-Clone this repository and compile the project using Cargo:
-
+### 1. Build from Source
 ```bash
-# Build the binary in release mode
 cargo build --release
 ```
+Binary location: `target/release/meleys` (or `meleys.exe` on Windows).
 
-The compiled binary will be located at `target/release/meleys` (or `target/release/meleys.exe` on Windows).
+### 2. Run Modes
+- **HTTP REST Server** (default port `8787`):
+  ```bash
+  ./target/release/meleys
+  ```
+- **MCP Stdio Server** (for LLM agents):
+  ```bash
+  ./target/release/meleys --mcp
+  ```
+
+### 3. Verify Server Health
+```bash
+curl http://localhost:8787/v1/health
+```
 
 ---
 
-## Running Meleys
-
-Meleys supports two primary transport modes: **HTTP API** (default) and **Model Context Protocol (MCP)**.
-
-### 1. HTTP Mode (Default)
-
-Running without any command-line flags starts the HTTP server:
+## Quick Start (HTTP API)
 
 ```bash
-./target/release/meleys
-```
-
-By default, the server will:
-- Listen on `http://127.0.0.1:8787` (localhost only).
-- Automatically detect the system Chrome/Chromium installation.
-- Log server events to stdout (with `meleys=info` logging).
-
-You can verify that the server is running by sending a request to the health endpoint:
-
-```bash
-curl -i http://localhost:8787/v1/health
-```
-
-Expected response:
-```http
-HTTP/1.1 200 OK
-content-type: application/json
-
-{"status":"ok"}
-```
-
-### 2. MCP Stdio Mode
-
-If you are using Meleys to give a command-line LLM agent access to a browser, start Meleys in Model Context Protocol (MCP) mode:
-
-```bash
-./target/release/meleys --mcp
-```
-
-In this mode, Meleys communicates over stdio using JSON-RPC 2.0. This is suitable for subprocess integration with client agents (such as Claude Desktop or Cline).
-
----
-
-## Quick Start Example (HTTP API)
-
-Here is a simple sequence using `curl` and `jq` to create a session, navigate to a page, and fetch its text.
-
-### Step 1: Create a Session
-```bash
+# 1. Create session
 curl -s -X POST http://localhost:8787/v1/sessions \
   -H "Content-Type: application/json" \
   -d '{"profile_name": "quick-start", "headless": true}'
-```
 
-Response:
-```json
-{
-  "session_id": "quick-start",
-  "tab_id": "00000000-0000-0000-0000-000000000000",
-  "action": "create_session",
-  "success": true,
-  "timestamp": "2026-07-17T11:00:00Z",
-  "url": "about:blank",
-  "title": "",
-  "result": {
-    "type": "Empty"
-  },
-  "error": null,
-  "console_messages": [],
-  "network_summary": null
-}
-```
-*Note the returned `session_id` and the default `tab_id`.*
-
-### Step 2: Navigate to a Website
-```bash
-curl -s -X POST http://localhost:8787/v1/sessions/quick-start/tabs/00000000-0000-0000-0000-000000000000/navigate \
+# 2. Navigate
+curl -s -X POST http://localhost:8787/v1/sessions/quick-start/tabs/<TAB_ID>/navigate \
   -H "Content-Type: application/json" \
   -d '{"url": "https://example.com"}'
-```
 
-Response:
-```json
-{
-  "session_id": "quick-start",
-  "tab_id": "00000000-0000-0000-0000-000000000000",
-  "action": "navigate",
-  "success": true,
-  "timestamp": "2026-07-17T11:00:05Z",
-  "url": "https://example.com/",
-  "title": "Example Domain",
-  "result": {
-    "type": "Empty"
-  },
-  "error": null,
-  "console_messages": [],
-  "network_summary": null
-}
-```
+# 3. Extract text
+curl -s -X POST http://localhost:8787/v1/sessions/quick-start/tabs/<TAB_ID>/get_text \
+  -H "Content-Type: application/json" -d '{}'
 
-### Step 3: Extract Page Text
-```bash
-curl -s -X POST http://localhost:8787/v1/sessions/quick-start/tabs/00000000-0000-0000-0000-000000000000/get_text \
-  -H "Content-Type: application/json" \
-  -d '{}'
-```
-
-Response:
-```json
-{
-  "session_id": "quick-start",
-  "tab_id": "00000000-0000-0000-0000-000000000000",
-  "action": "get_text",
-  "success": true,
-  "timestamp": "2026-07-17T11:00:06Z",
-  "url": "https://example.com/",
-  "title": "Example Domain",
-  "result": {
-    "type": "Text",
-    "data": "Example Domain\nThis domain is for use in illustrative examples in documents..."
-  },
-  "error": null,
-  "console_messages": [],
-  "network_summary": null
-}
-```
-
-### Step 4: Close the Session
-```bash
+# 4. Close session
 curl -s -X POST http://localhost:8787/v1/sessions/quick-start/close
 ```
 
 ---
 
-## Installer & Agent Integration (Windows)
+## Coding Agent Integration (`meleys setup`)
 
-Meleys ships a WiX MSI installer (`wix/meleys.wxs`) that installs `meleys.exe` to
-`C:\Program Files\Meleys`, adds it to the system `PATH`, and creates a Start Menu
-shortcut.
+Meleys can automatically register itself as a stdio MCP server for supported coding agents:
 
-### Building the installer
+| Agent | Config File |
+|-------|-------------|
+| **Claude Code** | `%USERPROFILE%\.claude.json` + denies built-in `WebSearch`/`WebFetch` |
+| **Cline** | `%USERPROFILE%\.cline\mcp.json` |
+| **Cursor** | `%USERPROFILE%\.cursor\mcp.json` |
+| **VS Code** | `%APPDATA%\Code\User\settings.json` |
 
+### CLI Commands
 ```bash
-# 1. Produce the release binary
-cargo build --release
+# Register for all detected agents
+meleys setup install
 
-# 2. Build the .msi (requires the WiX toolset: winget install WiX.WiXToolset)
-powershell -ExecutionPolicy Bypass -File wix/build.ps1
-```
+# Register specific agents without disabling built-in search
+meleys setup install --agents claude,cursor --no-disable-builtin
 
-This produces `wix/meleys.msi`.
-
-### What the installer does to coding agents
-
-After installation, the MSI runs `meleys setup install`, which registers Meleys as a
-**stdio MCP server** in the config files of these coding agents:
-
-| Agent | Config file written |
-|-------|---------------------|
-| Claude Code | `%USERPROFILE%\.claude.json` (under `mcpServers`) + `%USERPROFILE%\.claude\settings.json` (`permissions.deny: ["WebSearch","WebFetch"]`) |
-| Cline | `%USERPROFILE%\.cline\mcp.json` |
-| Cursor | `%USERPROFILE%\.cursor\mcp.json` |
-| VS Code / GitHub Copilot | `%APPDATA%\Code\User\settings.json` (under `mcp.servers`) |
-
-Because Claude Code's built-in `WebSearch`/`WebFetch` tools are denied, the agent
-routes web access through Meleys (the local headless Chromium runtime) whenever it
-needs to search the web. All edits are marked `_meleys_managed` and are idempotent.
-
-### Managing agent integration manually
-
-The same `meleys setup` command can be run any time (it does not require the MSI):
-
-```bash
-# Register for all agents (or a subset)
-meleys setup install [--agents claude,cline,cursor,vscode] [--no-disable-builtin]
-
-# Show current registration status
+# View registration status
 meleys setup list
 
-# Remove Meleys from agent configs (only the keys Meleys added)
-meleys setup uninstall [--agents claude,cline,cursor,vscode]
+# Remove Meleys from agent configs
+meleys setup uninstall
 ```
 
-> Note: `meleys setup` resolves the absolute path of the running executable, so it
-> works whether Meleys was installed via the MSI or built from source. Run it after
-> (re)installing Meleys so agents point at the current binary.
+### Windows MSI Installer
+Build the `.msi` package (requires WiX Toolset):
+```powershell
+powershell -ExecutionPolicy Bypass -File wix/build.ps1
+```
+The installer automatically runs `meleys setup install` post-installation.
