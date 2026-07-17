@@ -90,13 +90,13 @@ jobs:
   # MSRV check — ensure minimum supported Rust version compiles
   # ─────────────────────────────────────────────────────────────
   msrv:
-    name: MSRV (1.75.0)
+    name: MSRV (1.80.0)
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@master
         with:
-          toolchain: "1.75.0"
+          toolchain: "1.80.0"
       - uses: Swatinem/rust-cache@v2
       - run: cargo check --verbose
 
