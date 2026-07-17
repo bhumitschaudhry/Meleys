@@ -6,7 +6,7 @@ This document details the architecture, module layout, and internal execution mo
 
 ## High-Level Architecture Overview
 
-Meleys acts as a deterministic bridge between an external LLM agent (or client process) and a Chromium browser instance. The core architecture is composed of several decoupled layers:
+Meleys acts as a deterministic bridge between an external LLM agent (or client process) and persistent browser engine instances. The core architecture is composed of several decoupled layers:
 
 ```
 +--------------------------------------------------------+
@@ -21,26 +21,23 @@ Meleys acts as a deterministic bridge between an external LLM agent (or client p
                             | Action Enum
                             v
 +--------------------------------------------------------+
-|                  Action Dispatcher                     |
-|  Translates actions and routes to the Session Manager |
-+---------------------------+----------------------------+
-                            |
-                            v
-+--------------------------------------------------------+
 |                   Session Manager                      |
-|  Manages lifecycle, isolation, and process registry   |
+|  Manages lifecycle, fallback, and engine preferences   |
 +---------------------------+----------------------------+
                             |
                             v
 +--------------------------------------------------------+
 |                   Browser Session                      |
-|  Owns single Chrome process (profile directory) & tabs |
+|  Tracks active engine & serializes page handle actions |
 +---------------------------+----------------------------+
-                            | chromiumoxide (CDP)
-                            v
-+--------------------------------------------------------+
-|                  Headless Chromium                     |
-+--------------------------------------------------------+
+                            | BrowserEngine Trait
+            +---------------+---------------+
+            |                               |
+            v                               v
++-----------------------+       +-----------------------+
+|   Lightpanda Engine   |       |    Chromium Engine    |
+|   (Fast execution)    |       |   (Full web compat)   |
++-----------------------+       +-----------------------+
 ```
 
 ---
@@ -54,26 +51,30 @@ The crate is structured as follows:
 - `src/error.rs`: Centralizes the `MeleyError` enum, providing structured error mappings to standard machine-readable codes.
 - `src/observation.rs`: Defines the `Observation` payload, which is the universal response envelope returned by all operations.
 - `src/selector.rs`: Resolves how elements are queried by converting CSS, XPath, AxNodeId, and Text selectors into evaluated JavaScript or CDP operations.
+- `src/engine/`:
+  - `mod.rs`: Defines the core `BrowserEngine` trait, engine preference types, and engine selection logic.
+  - `lightpanda.rs`: Lightpanda engine implementation providing lightweight, high-performance execution.
+  - `chromium.rs`: Chromium engine implementation wrapping `chromiumoxide` CDP connections.
+  - `fallback.rs`: Implements automatic fallback handling when an engine fails or encounters unsupported operations.
 - `src/transport/`:
-  - `http.rs`: Axum-based web router map translating REST request payloads into dispatcher calls.
+  - `http.rs`: Axum-based web router map translating REST request payloads into engine calls.
   - `mcp.rs`: Stdio JSON-RPC 2.0 server executing browser tools inside client process environments.
 - `src/actions/`:
   - `navigation.rs`: Implements tab-scoped actions like `navigate`, `go_back`, `go_forward`, `reload`, and `wait_for`.
   - `interaction.rs`: Simulates mouse/keyboard operations (`click`, `type_text`, `press_key`, `hover`, `scroll`).
   - `extraction.rs`: Retrieves text content, links, AX trees, and DOM snapshots.
   - `search.rs`: Adapts web search result parsing.
-  - `capture.rs`: Encodes PNG screenshots and landscape/portrait PDF files.
   - `download.rs`: Handles background files download and tracks file states.
   - `cookies.rs`: Direct cookie jar and localStorage reading/writing.
   - `tabs.rs`: Lifecycle actions for tab allocation.
-  - `session.rs`: Handles creation, closure, and active sessions list.
+  - `session.rs`: Handles creation, closure, and active sessions list with engine selection.
 - `src/session/`:
-  - `browser_session.rs`: The core struct holding Chrome CDP connections, registry of tabs, and process lifecycle.
-  - `profile.rs`: Platform-specific Chromium profile directory path management.
+  - `browser_session.rs`: The core struct holding engine CDP connections, registry of tabs, engine tracking, and process lifecycle.
+  - `profile.rs`: Platform-specific profile directory path management.
 - `src/setup/`:
   - `mod.rs`: Implements `meleys setup` CLI commands, handling automatic config detection, JSON/JSONC configuration editing, and custom permission settings for third-party coding agents.
 - `src/cdp/`:
-  - `launcher.rs`: Discovers system Google Chrome / Chromium and launches it with custom command-line arguments.
+  - `launcher.rs`: Discovers system Chrome / Chromium and Lightpanda binaries and launches browser engine processes.
   - `dom.rs`: Flattens and filters the CDP DOM representation into a light `SimplifiedNode` hierarchy.
   - `ax_tree.rs`: Extracts the Accessibility tree for semantic LLM consumption.
 - `wix/`:

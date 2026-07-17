@@ -10,11 +10,13 @@ Before building Meleys, ensure you have the following installed on your system:
    ```bash
    rustup default stable
    ```
-2. **Chrome or Chromium**: Meleys uses a headless browser to perform navigation, interaction, and extraction.
-   - **Windows**: Google Chrome or Microsoft Edge (usually auto-detected if installed in standard locations).
-   - **macOS**: Google Chrome (installed in `/Applications/Google Chrome.app`).
-   - **Linux**: Chrome or Chromium packages (e.g. `chromium-browser` or `google-chrome-stable` via your package manager).
-   - *Note*: If you install Chrome/Chromium in a non-standard location, you must configure its path in `config.toml` or set the `MELEYS_BROWSER_EXECUTABLE_PATH` environment variable.
+2. **Browser Engine (Chrome, Chromium, or Lightpanda)**: Meleys uses headless browser engines to perform navigation, interaction, and extraction.
+   - **Lightpanda**: Lightweight high-performance execution engine (auto-discovered on system PATH or configured via `config.toml`).
+   - **Chrome / Chromium**: Full browser compatibility.
+     - **Windows**: Google Chrome or Microsoft Edge (usually auto-detected if installed in standard locations).
+     - **macOS**: Google Chrome (installed in `/Applications/Google Chrome.app`).
+     - **Linux**: Chrome or Chromium packages (e.g. `chromium-browser` or `google-chrome-stable` via your package manager).
+   - *Note*: If installed in non-standard locations, configure paths in `config.toml` or set `MELEYS_ENGINE__LIGHTPANDA__BINARY_PATH` / `MELEYS_ENGINE__CHROMIUM__EXECUTABLE_PATH`.
 
 ---
 

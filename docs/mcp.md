@@ -75,7 +75,8 @@ To get a list of available browser tools, the client calls `tools/list`.
           "properties": {
             "profile_name": { "type": "string", "description": "Optional profile name for persistence" },
             "headless": { "type": "boolean", "description": "Run headless (default: true)" },
-            "default_search_engine": { "type": "string", "enum": ["google", "bing", "duckduckgo"] }
+            "default_search_engine": { "type": "string", "enum": ["google", "bing", "duckduckgo"] },
+            "engine_preference": { "type": "string", "enum": ["auto", "lightpanda", "chromium"], "description": "Preferred browser engine" }
           },
           "required": []
         }
@@ -133,7 +134,7 @@ Below is the complete list of tools exposed by the Meleys MCP server:
 
 | Tool Name | Purpose | Required Arguments | Optional Arguments |
 |-----------|---------|--------------------|--------------------|
-| `create_session` | Launches a persistent Chromium profile. | - | `profile_name`, `headless`, `default_search_engine` |
+| `create_session` | Launches a persistent browser session. | - | `profile_name`, `headless`, `default_search_engine`, `engine_preference` |
 | `close_session` | Closes browser and cleans up processes. | `session_id` | - |
 | `list_sessions` | Lists currently active browser instances. | - | - |
 | `new_tab` | Opens a new page/tab. | `session_id` | `url` |
@@ -158,8 +159,6 @@ Below is the complete list of tools exposed by the Meleys MCP server:
 | `get_ax_tree` | Accessibility tree structural extraction. | `session_id` | `tab_id`, `selector`, `max_depth` |
 | `query_elements` | Queries elements by CSS selector. | `session_id`, `selector` | `tab_id`, `limit` |
 | `evaluate_js` | Evaluates raw JS. | `session_id`, `expression` | `tab_id` |
-| `screenshot` | Captures a PNG/JPEG screenshot. | `session_id` | `tab_id`, `selector`, `full_page`, `format` |
-| `export_pdf` | Prints page layout as a local PDF. | `session_id` | `tab_id`, `landscape` |
 | `download_file` | Initiates browser asset download. | `session_id`, `url` | `tab_id`, `save_as` |
 | `list_downloads` | Retrieves download file registries. | `session_id` | - |
 | `get_cookies` | Gets cookie jar details. | `session_id` | `tab_id`, `urls` |

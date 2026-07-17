@@ -110,7 +110,8 @@ Many interaction and extraction actions take a `selector` object. The `selector`
   {
     "profile_name": "string (optional, for persistent cookies/storage)",
     "headless": true,
-    "default_search_engine": "duckduckgo|google|bing"
+    "default_search_engine": "duckduckgo|google|bing",
+    "engine_preference": "auto|lightpanda|chromium (optional)"
   }
   ```
 * **Result Type**: `Empty` (The session ID is returned in the root `session_id` property).
@@ -458,52 +459,7 @@ Many interaction and extraction actions take a `selector` object. The `selector`
 
 ---
 
-### Capture & Downloads
-
-#### Take Screenshot
-* **Route**: `POST /v1/sessions/:sid/tabs/:tid/screenshot`
-* **Request**:
-  ```json
-  {
-    "selector": { "type": "Css", "value": "div#chart" },
-    "full_page": false,
-    "format": "png|jpeg",
-    "timeout_ms": 30000
-  }
-  ```
-* **Result Type**: `Screenshot`
-* **Result Data**:
-  ```json
-  {
-    "format": "png",
-    "base64": "iVBORw0KGgo...",
-    "width": 800,
-    "height": 600
-  }
-  ```
-
-#### Export PDF
-* **Route**: `POST /v1/sessions/:sid/tabs/:tid/export_pdf`
-* **Request**:
-  ```json
-  {
-    "landscape": false,
-    "timeout_ms": 30000
-  }
-  ```
-* **Result Type**: `Download`
-* **Result Data**:
-  ```json
-  {
-    "id": "pdf-export-uuid",
-    "url": "pdf_export://local",
-    "path": "/path/to/downloads/pdf_export_123.pdf",
-    "size_bytes": 102400,
-    "state": "completed",
-    "started_at": "2026-07-17T11:00:00Z",
-    "completed_at": "2026-07-17T11:00:01Z"
-  }
-  ```
+### Downloads
 
 #### Download File
 * **Route**: `POST /v1/sessions/:sid/tabs/:tid/download_file`

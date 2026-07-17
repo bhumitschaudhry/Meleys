@@ -28,9 +28,33 @@ http_bind = "127.0.0.1"
 mcp_transport = "stdio"
 
 # ==========================================
-# Browser Settings
+# Engine Settings
 # ==========================================
-[browser]
+[engine]
+# Default engine preference for new sessions ("lightpanda", "chromium", or "auto").
+# Default: "lightpanda"
+default = "lightpanda"
+
+# Whether to automatically fallback to Chromium if Lightpanda fails or encounters unsupported features.
+fallback_enabled = true
+
+# Maximum engine fallbacks allowed per session.
+max_engine_fallbacks_per_session = 1
+
+[engine.lightpanda]
+# Path to the Lightpanda binary. Leave empty to auto-discover on system PATH.
+binary_path = ""
+
+# Port on which Lightpanda CDP service runs.
+port = 9223
+
+# Timeout in milliseconds for Lightpanda engine startup.
+startup_timeout_ms = 5000
+
+# Whether to obey robots.txt policies.
+obey_robots = true
+
+[engine.chromium]
 # Path to the Chrome/Chromium executable. 
 # Leave empty to automatically detect Chrome/Chromium on your system path.
 executable_path = ""
@@ -97,13 +121,17 @@ Any configuration key can be overridden using environment variables prefixed wit
   ```bash
   MELEYS_SERVER__HTTP_PORT=9000 ./target/release/meleys
   ```
+- Set default engine preference:
+  ```bash
+  MELEYS_ENGINE__DEFAULT="chromium" ./target/release/meleys
+  ```
 - Enable JavaScript evaluation dynamically:
   ```bash
   MELEYS_LIMITS__ALLOW_EVALUATE_JS=true ./target/release/meleys
   ```
-- Change the browser executable path:
+- Change the Chromium executable path:
   ```bash
-  MELEYS_BROWSER__EXECUTABLE_PATH="/usr/bin/google-chrome-stable" ./target/release/meleys
+  MELEYS_ENGINE__CHROMIUM__EXECUTABLE_PATH="/usr/bin/google-chrome-stable" ./target/release/meleys
   ```
 
 ---

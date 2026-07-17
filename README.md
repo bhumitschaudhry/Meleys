@@ -1,6 +1,6 @@
 # Meleys — Agent-First Browser Runtime
 
-Meleys is a lightweight local browser runtime in Rust that gives LLM agents control over a persistent, headless Chromium browser. 
+Meleys is a lightweight local browser runtime in Rust that gives LLM agents control over persistent, headless browser engines (supporting both high-speed Lightpanda JS engine and full Chromium). 
 
 It exposes core primitives (navigation, click, type, scroll) and returns structured observations (accessibility trees, DOM snapshots, search results) without complex external dependencies.
 
@@ -78,26 +78,23 @@ Target elements explicitly using structured selectors:
                             | Action Enum
                             v
 +--------------------------------------------------------+
-|                  Action Dispatcher                     |
-|  Translates actions and routes to the Session Manager |
-+---------------------------+----------------------------+
-                            |
-                            v
-+--------------------------------------------------------+
 |                   Session Manager                      |
-|  Manages lifecycle, isolation, and process registry   |
+|  Manages lifecycle, fallback, and engine preferences   |
 +---------------------------+----------------------------+
                             |
                             v
 +--------------------------------------------------------+
 |                   Browser Session                      |
-|  Owns single Chrome process (profile directory) & tabs |
+|  Tracks active engine & serializes page handle actions |
 +---------------------------+----------------------------+
-                            | chromiumoxide (CDP)
-                            v
-+--------------------------------------------------------+
-|                  Headless Chromium                     |
-+--------------------------------------------------------+
+                            | BrowserEngine Trait
+            +---------------+---------------+
+            |                               |
+            v                               v
++-----------------------+       +-----------------------+
+|   Lightpanda Engine   |       |    Chromium Engine    |
+|   (Fast execution)    |       |   (Full web compat)   |
++-----------------------+       +-----------------------+
 ```
 
 ---
