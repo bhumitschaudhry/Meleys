@@ -180,7 +180,6 @@ impl Config {
             .unwrap_or_default();
         Ok(config)
     }
-
 }
 
 #[cfg(test)]
