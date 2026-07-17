@@ -3,4 +3,5 @@ Cargo.lock
 /.commandcode
 /wix/*.wixobj
 /wix/*.msi
+spec.md
 
