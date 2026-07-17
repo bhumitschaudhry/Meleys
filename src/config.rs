@@ -24,8 +24,6 @@ pub struct ServerConfig {
     pub http_port: u16,
     #[serde(default = "default_http_bind")]
     pub http_bind: String,
-    #[serde(default = "default_mcp_transport")]
-    pub mcp_transport: String,
 }
 
 fn default_http_port() -> u16 {
@@ -34,16 +32,12 @@ fn default_http_port() -> u16 {
 fn default_http_bind() -> String {
     "127.0.0.1".to_string()
 }
-fn default_mcp_transport() -> String {
-    "stdio".to_string()
-}
 
 impl Default for ServerConfig {
     fn default() -> Self {
         Self {
             http_port: default_http_port(),
             http_bind: default_http_bind(),
-            mcp_transport: default_mcp_transport(),
         }
     }
 }
@@ -187,15 +181,6 @@ impl Config {
         Ok(config)
     }
 
-    /// Load from a specific path.
-    pub fn load_from(path: &str) -> anyhow::Result<Self> {
-        let config: Config = Figment::new()
-            .merge(Toml::file(path))
-            .merge(Env::prefixed("MELEYS_"))
-            .extract()
-            .unwrap_or_default();
-        Ok(config)
-    }
 }
 
 #[cfg(test)]
@@ -207,7 +192,6 @@ mod tests {
         let server = ServerConfig::default();
         assert_eq!(server.http_port, 8787);
         assert_eq!(server.http_bind, "127.0.0.1");
-        assert_eq!(server.mcp_transport, "stdio");
     }
 
     #[test]
@@ -285,7 +269,6 @@ mod tests {
 [server]
 http_port = 9999
 http_bind = "0.0.0.0"
-mcp_transport = "sse"
 
 [browser]
 executable_path = ""
@@ -309,7 +292,6 @@ allowed_save_dirs = []
         let config: Config = toml::from_str(toml_str).expect("Failed to parse TOML");
         assert_eq!(config.server.http_port, 9999);
         assert_eq!(config.server.http_bind, "0.0.0.0");
-        assert_eq!(config.server.mcp_transport, "sse");
         assert!(!config.browser.headless);
         assert_eq!(config.browser.default_viewport.width, 1920);
         assert_eq!(config.browser.default_viewport.height, 1080);
@@ -324,7 +306,6 @@ allowed_save_dirs = []
 [server]
 http_port = 3000
 http_bind = "127.0.0.1"
-mcp_transport = "stdio"
 
 [browser]
 executable_path = ""
@@ -350,12 +331,6 @@ allowed_save_dirs = []
         assert_eq!(config.server.http_bind, "127.0.0.1");
         assert!(config.browser.headless);
         assert_eq!(config.search.default_engine, "duckduckgo");
-    }
-
-    #[test]
-    fn test_config_load_from_nonexistent_file() {
-        let config = Config::load_from("/nonexistent/path/config.toml");
-        assert!(config.is_ok());
     }
 
     #[test]
