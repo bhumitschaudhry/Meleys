@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="assets/logo.png" alt="Meleys Logo" width="200">
+</p>
+
 # Meleys — Agent-First Browser Runtime
 
 [![Build](https://github.com/bhumitschaudhry/Meleys/actions/workflows/build.yml/badge.svg?branch=main)](https://github.com/bhumitschaudhry/Meleys/actions/workflows/build.yml)
