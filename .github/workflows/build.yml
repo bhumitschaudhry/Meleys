@@ -1,0 +1,99 @@
+name: Build
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: build-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  CARGO_TERM_COLOR: always
+  RUST_BACKTRACE: 1
+  # Pinned stable Rust toolchain version for reproducible builds
+  RUST_VERSION: "1.87.0"
+
+jobs:
+  # ─────────────────────────────────────────────────────────────
+  # Build — compile the project in debug and release modes
+  # ─────────────────────────────────────────────────────────────
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Rust toolchain (${{ env.RUST_VERSION }})
+        uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: ${{ env.RUST_VERSION }}
+          components: rustfmt, clippy
+
+      - name: Cache Cargo registry and build artefacts
+        uses: Swatinem/rust-cache@v2
+        with:
+          key: build-ubuntu-latest
+
+      - name: Build (debug)
+        run: cargo build --locked --verbose
+
+      - name: Build (release)
+        run: cargo build --locked --release --verbose
+
+      # ── Upload release binary as a downloadable artifact ──────
+      - name: Upload release binary
+        uses: actions/upload-artifact@v4
+        with:
+          name: meleys-linux-x86_64
+          path: target/release/meleys
+          if-no-files-found: error
+          retention-days: 30
+
+  # ─────────────────────────────────────────────────────────────
+  # Test — run the full test suite and upload results
+  # ─────────────────────────────────────────────────────────────
+  test:
+    name: Test
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Rust toolchain (${{ env.RUST_VERSION }})
+        uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: ${{ env.RUST_VERSION }}
+
+      - name: Cache Cargo registry and build artefacts
+        uses: Swatinem/rust-cache@v2
+        with:
+          key: test-ubuntu-latest
+
+      - name: Run unit tests (lib + bins)
+        run: cargo test --locked --lib --bins --verbose 2>&1 | tee test-unit.log
+
+      - name: Run doc tests
+        run: cargo test --locked --doc --verbose 2>&1 | tee test-doc.log
+
+      - name: Run non-browser integration tests
+        run: cargo test --locked --test integration_search --verbose 2>&1 | tee test-integration.log
+
+      - name: Upload test logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-logs
+          path: |
+            test-unit.log
+            test-doc.log
+            test-integration.log
+          if-no-files-found: warn
+          retention-days: 7

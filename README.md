@@ -1,5 +1,7 @@
 # Meleys — Agent-First Browser Runtime
 
+[![Build](https://github.com/bhumitschaudhry/Meleys/actions/workflows/build.yml/badge.svg?branch=main)](https://github.com/bhumitschaudhry/Meleys/actions/workflows/build.yml)
+
 Meleys is a lightweight local browser runtime in Rust that gives LLM agents control over persistent, headless browser engines (Lightpanda and Chromium).
 
 It exposes core browser primitives (navigation, click, type, scroll) and returns structured observations (accessibility trees, DOM snapshots, search results) optimized for LLM token usage.
