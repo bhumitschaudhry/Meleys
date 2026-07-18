@@ -39,6 +39,10 @@
 
     <MediaTemplate EmbedCab="yes" />
 
+    <!-- Application & Add/Remove Programs Icon -->
+    <Icon Id="MeleysIcon.ico" SourceFile="$(var.AssetDir)\icon.ico" />
+    <Property Id="ARPPRODUCTICON" Value="MeleysIcon.ico" />
+
     <!-- Resolve the built binary location from the environment. -->
     <Property Id="MELEYS_BIN_DIR">
       <DirectorySearch Id="SearchMeleysBin" Path="[SourceDir]release" />
@@ -92,7 +96,8 @@
           Name="Meleys Browser Runtime"
           Description="Agent-first headless browser runtime"
           Target="[INSTALLFOLDER]meleys.exe"
-          WorkingDirectory="INSTALLFOLDER" />
+          WorkingDirectory="INSTALLFOLDER"
+          Icon="MeleysIcon.ico" />
         <RemoveFolder Id="CleanupAppMenu" Directory="ApplicationProgramsFolder" On="uninstall" />
         <RegistryValue
           Root="HKCU"

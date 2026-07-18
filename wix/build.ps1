@@ -14,6 +14,8 @@ $root   = Resolve-Path (Join-Path $PSScriptRoot "..")
 $wixDir = $PSScriptRoot
 $binDir = Join-Path $root "target" "release"
 
+$assetDir = Join-Path $root "assets"
+
 if (-not (Test-Path (Join-Path $binDir "meleys.exe"))) {
     Write-Error "meleys.exe not found in $binDir. Run 'cargo build --release' first."
     exit 1
@@ -40,6 +42,7 @@ Write-Host "Building Meleys installer v$version ..."
     -dProductVersion=$version `
     -dBinDir=$binDir `
     -dWixDir=$wixDir `
+    -dAssetDir=$assetDir `
     -out "$wixDir\meleys.wixobj"
 if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
