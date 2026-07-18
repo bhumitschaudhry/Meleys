@@ -32,6 +32,27 @@ jobs:
       - run: cargo fmt --all -- --check
 
   # ─────────────────────────────────────────────────────────────
+  # Docs check — ensure Docusaurus documentation builds successfully
+  # ─────────────────────────────────────────────────────────────
+  docs-build:
+    name: Docs Build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: docs/package-lock.json
+      - name: Install dependencies
+        run: npm ci
+        working-directory: docs
+      - name: Build Docusaurus site
+        run: npm run build
+        working-directory: docs
+
+  # ─────────────────────────────────────────────────────────────
   # Clippy lint — catch common mistakes and style issues
   # ─────────────────────────────────────────────────────────────
   clippy:
