@@ -12,7 +12,7 @@ $ErrorActionPreference = "Stop"
 
 $root   = Resolve-Path (Join-Path $PSScriptRoot "..")
 $wixDir = $PSScriptRoot
-$binDir = Join-Path $root "target" "release"
+$binDir = Join-Path $root "target\release"
 
 $assetDir = Join-Path $root "assets"
 
