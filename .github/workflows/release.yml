@@ -4,6 +4,9 @@ on:
   push:
     tags:
       - "v*"
+  release:
+    types: [published]
+  workflow_dispatch:
 
 permissions:
   contents: write
@@ -169,18 +172,12 @@ jobs:
           chmod +x release/meleys-macos-x64
 
           # Generate checksums
-          cd release
-          sha256sum * > checksums-sha256.txt
+          (cd release && sha256sum meleys-* > checksums-sha256.txt)
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
+          tag_name: ${{ github.ref_name }}
           name: ${{ github.ref_name }}
           generate_release_notes: true
-          files: |
-            release/meleys-windows-x64.exe
-            release/meleys-windows-x64.msi
-            release/meleys-linux-x86_64
-            release/meleys-macos-aarch64
-            release/meleys-macos-x64
-            release/checksums-sha256.txt
+          files: release/*
