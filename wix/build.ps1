@@ -39,10 +39,10 @@ if (-not $candle -or -not $light) {
 Write-Host "Building Meleys installer v$version ..."
 
 & candle.exe "$wixDir\meleys.wxs" `
-    -dProductVersion=$version `
-    -dBinDir=$binDir `
-    -dWixDir=$wixDir `
-    -dAssetDir=$assetDir `
+    "-dProductVersion=$version" `
+    "-dBinDir=$binDir" `
+    "-dWixDir=$wixDir" `
+    "-dAssetDir=$assetDir" `
     -out "$wixDir\meleys.wixobj"
 if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
