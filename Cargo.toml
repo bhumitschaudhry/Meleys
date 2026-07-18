@@ -2,6 +2,7 @@
 name = "meleys"
 version = "0.1.0"
 edition = "2021"
+license = "Apache-2.0"
 description = "Lightweight, agent-first Chromium runtime in Rust that gives LLMs programmable hands on the web"
 
 [[bin]]
