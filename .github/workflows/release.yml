@@ -1,0 +1,186 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+env:
+  CARGO_TERM_COLOR: always
+  RUST_BACKTRACE: 1
+  RUST_VERSION: "1.87.0"
+
+jobs:
+  # ─────────────────────────────────────────────────────────────
+  # Build release binaries for all platforms
+  # ─────────────────────────────────────────────────────────────
+  build-windows:
+    name: Build (Windows x64)
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Rust toolchain
+        uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: ${{ env.RUST_VERSION }}
+
+      - uses: Swatinem/rust-cache@v2
+        with:
+          key: release-windows
+
+      - name: Build release binary
+        run: cargo build --locked --release --verbose
+
+      - name: Upload Windows binary
+        uses: actions/upload-artifact@v4
+        with:
+          name: meleys-windows-x64
+          path: target/release/meleys.exe
+          if-no-files-found: error
+
+  build-linux:
+    name: Build (Linux x64)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Rust toolchain
+        uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: ${{ env.RUST_VERSION }}
+
+      - uses: Swatinem/rust-cache@v2
+        with:
+          key: release-linux
+
+      - name: Build release binary
+        run: cargo build --locked --release --verbose
+
+      - name: Upload Linux binary
+        uses: actions/upload-artifact@v4
+        with:
+          name: meleys-linux-x86_64
+          path: target/release/meleys
+          if-no-files-found: error
+
+  build-macos:
+    name: Build (macOS ${{ matrix.arch }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: macos-latest
+            arch: aarch64
+            target: aarch64-apple-darwin
+          - os: macos-13
+            arch: x64
+            target: x86_64-apple-darwin
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Rust toolchain
+        uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: ${{ env.RUST_VERSION }}
+          targets: ${{ matrix.target }}
+
+      - uses: Swatinem/rust-cache@v2
+        with:
+          key: release-${{ matrix.target }}
+
+      - name: Build release binary
+        run: cargo build --locked --release --target ${{ matrix.target }} --verbose
+
+      - name: Upload macOS binary
+        uses: actions/upload-artifact@v4
+        with:
+          name: meleys-macos-${{ matrix.arch }}
+          path: target/${{ matrix.target }}/release/meleys
+          if-no-files-found: error
+
+  # ─────────────────────────────────────────────────────────────
+  # Build Windows MSI installer
+  # ─────────────────────────────────────────────────────────────
+  build-msi:
+    name: Build (Windows MSI)
+    runs-on: windows-latest
+    needs: build-windows
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download Windows binary
+        uses: actions/download-artifact@v4
+        with:
+          name: meleys-windows-x64
+          path: target/release
+
+      - name: Install WiX toolset
+        run: |
+          choco install wixtoolset -y --no-progress
+          echo "C:\Program Files (x86)\WiX Toolset v3.14\bin" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
+
+      - name: Build MSI installer
+        shell: pwsh
+        run: powershell -ExecutionPolicy Bypass -File wix/build.ps1
+
+      - name: Upload MSI installer
+        uses: actions/upload-artifact@v4
+        with:
+          name: meleys-windows-x64-installer
+          path: wix/meleys.msi
+          if-no-files-found: error
+
+  # ─────────────────────────────────────────────────────────────
+  # Create GitHub Release with all artifacts
+  # ─────────────────────────────────────────────────────────────
+  release:
+    name: Create Release
+    runs-on: ubuntu-latest
+    needs: [build-windows, build-linux, build-macos, build-msi]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      - name: Prepare release assets
+        run: |
+          mkdir -p release
+
+          # Windows
+          cp artifacts/meleys-windows-x64/meleys.exe release/meleys-windows-x64.exe
+          cp artifacts/meleys-windows-x64-installer/meleys.msi release/meleys-windows-x64.msi
+
+          # Linux
+          cp artifacts/meleys-linux-x86_64/meleys release/meleys-linux-x86_64
+          chmod +x release/meleys-linux-x86_64
+
+          # macOS
+          cp artifacts/meleys-macos-aarch64/meleys release/meleys-macos-aarch64
+          chmod +x release/meleys-macos-aarch64
+          cp artifacts/meleys-macos-x64/meleys release/meleys-macos-x64
+          chmod +x release/meleys-macos-x64
+
+          # Generate checksums
+          cd release
+          sha256sum * > checksums-sha256.txt
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          name: ${{ github.ref_name }}
+          generate_release_notes: true
+          files: |
+            release/meleys-windows-x64.exe
+            release/meleys-windows-x64.msi
+            release/meleys-linux-x86_64
+            release/meleys-macos-aarch64
+            release/meleys-macos-x64
+            release/checksums-sha256.txt
