@@ -1,3 +1,9 @@
+---
+id: 2026-07-18-multi-engine-architecture-design
+title: Multi-Engine Architecture Design Spec
+sidebar_position: 1
+---
+
 # Meleys Multi-Engine Architecture Design
 
 ## Overview
@@ -142,23 +148,3 @@ obey_robots = true
 - Add integration tests for engine selection and fallback
 - Update MSRV if needed for Lightpanda CDP client dependencies
 - Verify release build starts with both engines
-
-## File Change Summary
-
-| File | Action |
-|------|--------|
-| `src/engine/mod.rs` | NEW — trait, EngineKind, EngineCapabilities |
-| `src/engine/chromium.rs` | NEW — ChromiumEngine |
-| `src/engine/lightpanda.rs` | NEW — LightpandaEngine |
-| `src/engine/fallback.rs` | NEW — fallback orchestration |
-| `src/error.rs` | MODIFY — add new error variants |
-| `src/config.rs` | MODIFY — EngineConfig, migrate BrowserConfig |
-| `src/observation.rs` | MODIFY — remove Screenshot, add engine fields |
-| `src/session/mod.rs` | MODIFY — shared Lightpanda pool, EnginePreference |
-| `src/session/browser_session.rs` | MODIFY — hold Arc<dyn BrowserEngine>, engine_history |
-| `src/actions/capture.rs` | DELETE |
-| `src/actions/mod.rs` | MODIFY — remove capture module |
-| `src/transport/http.rs` | MODIFY — remove screenshot/PDF routes |
-| `src/transport/mcp.rs` | MODIFY — remove screenshot/PDF tools |
-| `src/cdp/launcher.rs` | MODIFY — Lightpanda binary discovery + spawn |
-| `.github/workflows/ci.yml` | MODIFY — Lightpanda setup, engine tests |

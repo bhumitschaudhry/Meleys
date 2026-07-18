@@ -1,0 +1,8 @@
+{
+  "label": "Design Specs",
+  "position": 2,
+  "link": {
+    "type": "generated-index",
+    "description": "Design specifications and architecture options."
+  }
+}

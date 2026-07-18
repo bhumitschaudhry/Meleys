@@ -1,3 +1,9 @@
+---
+id: architecture
+title: Architecture & Internal Design
+sidebar_position: 6
+---
+
 # Architecture & Internal Design
 
 This document details the architecture, module layout, and internal execution model of the Meleys browser runtime.

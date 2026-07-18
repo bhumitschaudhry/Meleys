@@ -1,3 +1,9 @@
+---
+id: 2026-07-18-multi-engine-architecture
+title: Multi-Engine Architecture Implementation Plan
+sidebar_position: 1
+---
+
 # Multi-Engine Architecture Implementation Plan
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
@@ -29,7 +35,7 @@
 | `src/error.rs` | MODIFY - add EngineStartupFailed, EngineCapabilityUnsupported, EngineFallbackExhausted |
 | `src/config.rs` | MODIFY - EngineConfig, nest BrowserConfig |
 | `src/observation.rs` | MODIFY - remove Screenshot, add engine fields |
-| `src/session/browser_session.rs` | MODIFY - hold Arc<dyn BrowserEngine>, engine_history |
+| `src/session/browser_session.rs` | MODIFY - hold `Arc<dyn BrowserEngine>`, engine_history |
 | `src/session/mod.rs` | MODIFY - shared Lightpanda pool, EnginePreference |
 | `src/actions/capture.rs` | DELETE |
 | `src/actions/mod.rs` | MODIFY - remove capture |
@@ -106,7 +112,7 @@
 
 **Files:** Modify `src/session/browser_session.rs`
 
-- [ ] Replace Arc<Mutex<Browser>> with Arc<dyn BrowserEngine>
+- [ ] Replace `Arc<Mutex<Browser>>` with `Arc<dyn BrowserEngine>`
 - [ ] Add engine_history field
 - [ ] Update new_tab, get_page, close methods
 - [ ] Verify compilation (expect errors in callers - fixed later)

@@ -1,3 +1,9 @@
+---
+id: configuration
+title: Configuration
+sidebar_position: 3
+---
+
 # Configuration Guide
 
 Meleys uses a layered configuration system powered by Figment, loading values from:

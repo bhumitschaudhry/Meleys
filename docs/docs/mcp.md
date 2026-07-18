@@ -1,3 +1,9 @@
+---
+id: mcp
+title: MCP Reference
+sidebar_position: 5
+---
+
 # Model Context Protocol (MCP) Reference
 
 Meleys includes a native **Model Context Protocol (MCP)** server implementation. This allows LLM client applications (like Claude Desktop, Cline, or Cursor) to automatically discover and execute browser automation tools.
@@ -228,4 +234,3 @@ Add the following entry under `mcpServers`:
 }
 ```
 *(Ensure the `meleys` binary is on your system `PATH`, or replace `"meleys"` with the absolute path to your compiled binary).*
-

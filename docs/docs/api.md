@@ -1,3 +1,9 @@
+---
+id: api
+title: HTTP REST API Reference
+sidebar_position: 4
+---
+
 # HTTP REST API Reference
 
 Meleys exposes a standard REST HTTP API. Every operation (except health check) is structured around performing an **Action** on a persistent **Session** or **Tab** and returning a structured **Observation**.

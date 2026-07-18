@@ -1,3 +1,9 @@
+---
+id: setup
+title: Installation & Setup
+sidebar_position: 2
+---
+
 # Installation & Setup Guide
 
 ## Prerequisites
